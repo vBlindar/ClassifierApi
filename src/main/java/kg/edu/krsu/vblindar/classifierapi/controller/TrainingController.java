@@ -23,7 +23,7 @@ public class TrainingController {
         if(file==null)
             throw new IOException("File is null");
         trainTextService.dataClassification(file);
-        return null;
+        return ResponseEntity.ok(Boolean.TRUE);
     }
 
 
