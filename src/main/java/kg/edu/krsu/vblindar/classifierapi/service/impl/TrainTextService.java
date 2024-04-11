@@ -1,76 +1,77 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
+import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
+import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
 import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
 import kg.edu.krsu.vblindar.classifierapi.service.ITrainTextService;
+import kg.edu.krsu.vblindar.classifierapi.textClassifier.Classifier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class TrainTextService implements ITrainTextService {
-    private final ExcelReader excelReader;
-    private final VocabularyService vocabularyService;
     private final CharacteristicService characteristicService;
+    private final VocabularyService vocabularyService;
     private final ClassifiableTextService classifiableTextService;
 
     @Override
-    public void dataClassification(MultipartFile file) throws IOException {
-        var xlsxFile = convertMultipartFileToFile(file);
-        var classifiableText = getClassifiableTexts(xlsxFile);
-        fillData(classifiableText,xlsxFile);
+    public List<Classifier> createClassifiers(){
+        var characteristics = characteristicService.getAllCharacteristics();
+        var vocabulary = vocabularyService.getAllVocabulary();
+        List<Classifier> classifiers = new ArrayList<>();
+        for (CharacteristicDto characteristic : characteristics) {
+            Classifier classifier = new Classifier(characteristic, vocabulary);
+            classifiers.add(classifier);
+        }
+        return classifiers;
+    }
+    @Override
+    public void startClassification() {
+        var classifiers = createClassifiers();
+        var texts = classifiableTextService.getAllTexts();
+        trainAndSaveClassifiers(texts, classifiers);
+        checkClassifiersAccuracy(texts,classifiers);
 
     }
 
     @Override
-    public void fillData(List<ClassifiableTextDto> classifiableText,File file){
-        vocabularyService.saveVocabularyToStorage(classifiableText);
-        characteristicService.saveCharacteristicsToStorage(classifiableText);
-        classifiableTextService.saveClassifiableTextsToStorage(classifiableText);
-        deleteTempFile(file);
-
-    }
-
-    @Override
-    public List<ClassifiableTextDto> getClassifiableTexts(File file){
-        List<ClassifiableTextDto> classifiableTexts = new ArrayList<>();
-
-        try {
-            classifiableTexts = excelReader.xlsxToClassifiableTexts(file, 1);
-        } catch (IOException | IllegalArgumentException e) {
-            System.out.println("Problem with excel file");
+    public void trainAndSaveClassifiers(List<ClassifiableTextDto> classifiableTextForTrain, List<Classifier> classifiers) {
+        for (Classifier classifier : classifiers) {
+            classifier.train(classifiableTextForTrain);
+            classifier.saveTrainedClassifier(new File("./models/textClassifier/"+ classifier.toString()));
         }
 
-        return classifiableTexts;
+        Classifier.shutdown();
     }
 
     @Override
-    public File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException {
-        File file = new File("tempFile.xlsx");
-        try (OutputStream os = new FileOutputStream(file)) {
-            os.write(multipartFile.getBytes());
-        }
-        return file;
-    }
+    public void checkClassifiersAccuracy(
+            List<ClassifiableTextDto> classifiableTexts,
+            List<Classifier> classifiers) {
 
-    @Override
-    public void deleteTempFile(File file) {
-        if (file.exists()) {
-            if (file.delete()) {
-                System.out.println("Файл успешно удален.");
-            } else {
-                System.out.println("Не удалось удалить файл.");
+        // read second sheet from a file
+
+        for (Classifier classifier : classifiers) {
+            CharacteristicDto characteristic = classifier.getCharacteristic();
+            int correctlyClassified = 0;
+
+            for (ClassifiableTextDto classifiableText : classifiableTexts) {
+                CharacteristicValueDto idealValue = classifiableText.getCharacteristicValue(characteristic);
+                CharacteristicValueDto classifiedValue = classifier.classify(classifiableText);
+
+                if (classifiedValue.getValue().equals(idealValue.getValue())) {
+                    correctlyClassified++;
+                }
             }
-        } else {
-            System.out.println("Файл не существует.");
+
+            double accuracy = ((double) correctlyClassified / classifiableTexts.size()) * 100;
+            System.out.println((String.format("Accuracy of Classifier for '" + characteristic.getName() + "' characteristic: %.2f%%",
+                    accuracy)));
         }
     }
 
