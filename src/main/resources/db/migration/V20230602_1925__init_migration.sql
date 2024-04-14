@@ -18,7 +18,7 @@ create table classifiable_texts
 (
     id   bigserial
         primary key,
-    text varchar(5000)
+    text text
 );
 
 create table classifiable_texts_characteristics

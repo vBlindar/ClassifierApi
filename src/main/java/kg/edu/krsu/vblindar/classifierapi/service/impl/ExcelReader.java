@@ -10,9 +10,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 @Component
@@ -50,7 +48,7 @@ public class ExcelReader implements IExcelReader {
 
             if (!sheet.getRow(i).getCell(0).getStringCellValue().isEmpty()) {
                 classifiableTexts.add(ClassifiableTextDto.builder()
-                        .text(sheet.getRow(i).getCell(0).getStringCellValue())
+                        .text(readTextFromFile(sheet.getRow(i).getCell(0).getStringCellValue()))
                         .characteristics(characteristicsValues)
                         .build());
             }
@@ -100,5 +98,19 @@ public class ExcelReader implements IExcelReader {
             }
         }
         return characteristicValues;
+    }
+
+    @Override
+    public String readTextFromFile(String path){
+        StringBuilder text = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ( (line = reader.readLine()) != null) {
+                text.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return text.toString();
     }
 }

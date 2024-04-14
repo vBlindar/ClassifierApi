@@ -2,6 +2,7 @@ package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
 import kg.edu.krsu.vblindar.classifierapi.dto.VocabularyWordDto;
+import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
 import kg.edu.krsu.vblindar.classifierapi.repository.VocabularyWordRepository;
 import kg.edu.krsu.vblindar.classifierapi.service.IVocabularyService;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -59,19 +61,17 @@ public class VocabularyService implements IVocabularyService {
 
 
     @Override
-    public void saveVocabularyToStorage(List<ClassifiableTextDto> classifiableText) {
-        var vocabulary = getVocabulary(classifiableText);
-        vocabulary
-                .forEach(this::saveWithVerification);
+    public void saveVocabularyToStorage(List<ClassifiableTextDto> classifiableTexts) {
+        List<VocabularyWordDto> vocabulary = getVocabulary(classifiableTexts);
+        var vocabularyInDb = vocabularyWordRepository.findAll();
+        vocabulary.removeIf(word -> vocabularyInDb.stream().anyMatch(dbWord -> dbWord.getValue().equals(word.getValue())));
+        saveWithVerification(vocabulary);
+
     }
 
     @Override
-    public void saveWithVerification(VocabularyWordDto word) {
-        boolean existingWord = vocabularyWordRepository.existsByValue(word.getValue());
-        if (!existingWord) {
-            var newWord = VocabularyWordDto.on(word);
-            vocabularyWordRepository.saveAndFlush(newWord);
-            word.setId(newWord.getId());
-        }
+    public void saveWithVerification(List<VocabularyWordDto> words) {
+       var vocabulary = words.stream().map(VocabularyWordDto::on).collect(Collectors.toSet());
+       vocabularyWordRepository.saveAll(vocabulary);
     }
 }

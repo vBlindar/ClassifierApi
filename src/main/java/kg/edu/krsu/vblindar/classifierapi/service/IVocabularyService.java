@@ -14,5 +14,5 @@ public interface IVocabularyService {
 
     void saveVocabularyToStorage(List<ClassifiableTextDto> classifiableText);
 
-    void saveWithVerification(VocabularyWordDto word);
+    void saveWithVerification(List<VocabularyWordDto> words);
 }

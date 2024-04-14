@@ -26,4 +26,6 @@ public interface IExcelReader {
     List<CharacteristicDto> getCharacteristicsDto(XSSFSheet sheet);
 
     Set<CharacteristicValueDto> getPossibleValues(XSSFSheet sheet, int index);
+
+    String readTextFromFile(String path);
 }

@@ -142,15 +142,22 @@ public class Classifier {
     }
 
     public void train(List<ClassifiableTextDto> classifiableTexts) {
-
+        System.out.println("Input");
         double[][] input = getInput(classifiableTexts);
+        System.out.println("input ++");
+        System.out.println("ideal");
         double[][] ideal = getIdeal(classifiableTexts);
+        System.out.println("ideal ++");
 
         Propagation train = new ResilientPropagation(network, new BasicMLDataSet(input, ideal));
-        train.setThreadCount(16);
+        System.out.println("network");
+        train.setThreadCount(32);
+        int c =0;
         do {
             train.iteration();
+            c++;
         } while (train.getError() > 0.01);
+        System.out.println(c);
         System.out.println("train finish ");
         train.finishTraining();
 
