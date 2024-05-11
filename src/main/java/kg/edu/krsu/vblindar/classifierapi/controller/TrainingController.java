@@ -19,8 +19,8 @@ public class TrainingController {
     private final TrainTextService trainTextService;
 
     @PostMapping("/text")
-    ResponseEntity<Boolean> textTraining() {
-        trainTextService.startClassification();
+    ResponseEntity<Boolean> textTraining() throws IOException {
+        trainTextService.startClassification2();
         return ResponseEntity.ok(Boolean.TRUE);
     }
 

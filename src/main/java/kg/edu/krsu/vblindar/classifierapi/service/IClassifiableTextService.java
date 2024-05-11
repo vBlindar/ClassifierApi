@@ -19,10 +19,16 @@ public interface IClassifiableTextService {
 
 
     void insertToClassifiableTextsCharacteristicsTable(ClassifiableText classifiableText, CharacteristicDto characteristicDto
-            ,CharacteristicValueDto characteristicValueDto);
+            , CharacteristicValueDto characteristicValueDto);
 
 
     List<ClassifiableTextDto> getAllTexts();
 
     List<ClassifiableTextDto> converting(List<ClassifiableText> texts, List<CharacteristicDto> characteristics);
+
+    List<ClassifiableTextDto> collectAndShuffleTexts(Map<String, Map<String, List<ClassifiableTextDto>>> splitMap,
+                                                     String key);
+
+    Map<String, Map<String, List<ClassifiableTextDto>>> splitTextsForTrainingAndTesting();
+
 }

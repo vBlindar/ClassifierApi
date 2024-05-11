@@ -142,15 +142,10 @@ public class Classifier {
     }
 
     public void train(List<ClassifiableTextDto> classifiableTexts) {
-        System.out.println("Input");
         double[][] input = getInput(classifiableTexts);
-        System.out.println("input ++");
-        System.out.println("ideal");
         double[][] ideal = getIdeal(classifiableTexts);
-        System.out.println("ideal ++");
 
         Propagation train = new ResilientPropagation(network, new BasicMLDataSet(input, ideal));
-        System.out.println("network");
         train.setThreadCount(32);
         int c =0;
         do {
@@ -179,8 +174,6 @@ public class Classifier {
     private double[][] getIdeal(List<ClassifiableTextDto> classifiableTexts) {
         double[][] ideal = new double[classifiableTexts.size()][outputLayerSize];
 
-        // convert all classifiable text characteristics to vectors
-        //
 
         int i = 0;
 
@@ -193,18 +186,16 @@ public class Classifier {
 
     private double[] getCharacteristicAsVector(ClassifiableTextDto classifiableText) {
         double[] vector = new double[outputLayerSize];
-        vector[(int) classifiableText.getCharacteristicValue(characteristic).getId() - 1] = 1;
+        var c = (int) classifiableText.getCharacteristicValue(characteristic).getId() - 1;
+        vector[c] = 1;
         return vector;
     }
 
     private double[] getTextAsVectorOfWords(ClassifiableTextDto classifiableText) {
         double[] vector = new double[inputLayerSize];
 
-        // convert text to nGramStrategy
         Set<String> uniqueValues = nGramStrategy.getNGram(classifiableText.getText());
 
-        // create vector
-        //
 
         for (String word : uniqueValues) {
             VocabularyWordDto vw = findWordInVocabulary(word);
