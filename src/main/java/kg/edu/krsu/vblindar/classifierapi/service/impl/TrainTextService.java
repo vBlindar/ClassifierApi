@@ -1,9 +1,10 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.VocabularyWordDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
+import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.service.ITrainTextService;
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.Classifier;
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.DL4JClassifier;
@@ -28,7 +29,7 @@ public class TrainTextService implements ITrainTextService {
         var characteristics = characteristicService.getAllCharacteristics();
         var vocabulary = vocabularyService.getAllVocabulary();
         List<Classifier> classifiers = new ArrayList<>();
-        for (CharacteristicDto characteristic : characteristics) {
+        for (Characteristic characteristic : characteristics) {
             Classifier classifier = new Classifier(characteristic, vocabulary);
             classifiers.add(classifier);
         }
@@ -45,7 +46,7 @@ public class TrainTextService implements ITrainTextService {
     }
 
     @Override
-    public void trainAndSaveClassifiers(List<ClassifiableTextDto> classifiableTextForTrain, List<Classifier> classifiers) {
+    public void trainAndSaveClassifiers(List<ClassifiableText> classifiableTextForTrain, List<Classifier> classifiers) {
         for (Classifier classifier : classifiers) {
             classifier.train(classifiableTextForTrain);
             classifier.saveTrainedClassifier(new File("./models/textClassifier/" + classifier.toString()));
@@ -54,7 +55,7 @@ public class TrainTextService implements ITrainTextService {
         Classifier.shutdown();
     }
 
-    public void trainAndSaveClassifiers2(List<ClassifiableTextDto> classifiableTextForTrain,
+    public void trainAndSaveClassifiers2(List<ClassifiableText> classifiableTextForTrain,
                                          List<DL4JClassifier> classifiers) throws IOException {
         for (DL4JClassifier classifier : classifiers) {
             classifier.train(classifiableTextForTrain);
@@ -66,18 +67,18 @@ public class TrainTextService implements ITrainTextService {
 
     @Override
     public void checkClassifiersAccuracy(
-            List<ClassifiableTextDto> classifiableTexts,
+            List<ClassifiableText> classifiableTexts,
             List<Classifier> classifiers) {
 
         // read second sheet from a file
 
         for (Classifier classifier : classifiers) {
-            CharacteristicDto characteristic = classifier.getCharacteristic();
+            Characteristic characteristic = classifier.getCharacteristic();
             int correctlyClassified = 0;
 
-            for (ClassifiableTextDto classifiableText : classifiableTexts) {
-                CharacteristicValueDto idealValue = classifiableText.getCharacteristicValue(characteristic);
-                CharacteristicValueDto classifiedValue = classifier.classify(classifiableText);
+            for (ClassifiableText classifiableText : classifiableTexts) {
+                CharacteristicValue idealValue = classifiableText.getCharacteristicValue(characteristic);
+                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
 
                 if (classifiedValue.getValue().equals(idealValue.getValue())) {
                     correctlyClassified++;
@@ -106,18 +107,18 @@ public class TrainTextService implements ITrainTextService {
     }
 
     public void checkClassifiersAccuracy2(
-            List<ClassifiableTextDto> classifiableTexts,
+            List<ClassifiableText> classifiableTexts,
             List<DL4JClassifier> classifiers) {
 
         // read second sheet from a file
 
         for (DL4JClassifier classifier : classifiers) {
-            CharacteristicDto characteristic = classifier.getCharacteristic();
+            Characteristic characteristic = classifier.getCharacteristic();
             int correctlyClassified = 0;
 
-            for (ClassifiableTextDto classifiableText : classifiableTexts) {
-                CharacteristicValueDto idealValue = classifiableText.getCharacteristicValue(characteristic);
-                CharacteristicValueDto classifiedValue = classifier.classify(classifiableText);
+            for (ClassifiableText classifiableText : classifiableTexts) {
+                CharacteristicValue idealValue = classifiableText.getCharacteristicValue(characteristic);
+                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
 
                 if (classifiedValue.getValue().equals(idealValue.getValue())) {
                     correctlyClassified++;
@@ -133,15 +134,15 @@ public class TrainTextService implements ITrainTextService {
 
     public List<DL4JClassifier> createClassifiers2() throws IOException {
         // Получаем все характеристики
-        List<CharacteristicDto> characteristics = characteristicService.getAllCharacteristics();
+        List<Characteristic> characteristics = characteristicService.getAllCharacteristics();
         // Получаем весь словарь
-        List<VocabularyWordDto> vocabulary = vocabularyService.getAllVocabulary();
+        List<VocabularyWord> vocabulary = vocabularyService.getAllVocabulary();
 
         // Список для хранения классификаторов
         List<DL4JClassifier> classifiers = new ArrayList<>();
 
         // Проходим по всем характеристикам, создавая классификаторы
-        for (CharacteristicDto characteristic : characteristics) {
+        for (Characteristic characteristic : characteristics) {
             // Создаем DL4JClassifier с соответствующей характеристикой и словарем
             DL4JClassifier classifier = new DL4JClassifier(null, characteristic, vocabulary);
             classifiers.add(classifier); // добавляем в список классификаторов
@@ -165,18 +166,18 @@ public class TrainTextService implements ITrainTextService {
     }
 
     public void checkClassifiersAccuracy3(
-            List<ClassifiableTextDto> classifiableTexts,
+            List<ClassifiableText> classifiableTexts,
             List<DL4JClassifierWithEmbedding> classifiers) {
 
         // read second sheet from a file
 
         for (DL4JClassifierWithEmbedding classifier : classifiers) {
-            CharacteristicDto characteristic = classifier.getCharacteristic();
+            Characteristic characteristic = classifier.getCharacteristic();
             int correctlyClassified = 0;
 
-            for (ClassifiableTextDto classifiableText : classifiableTexts) {
-                CharacteristicValueDto idealValue = classifiableText.getCharacteristicValue(characteristic);
-                CharacteristicValueDto classifiedValue = classifier.classify(classifiableText);
+            for (ClassifiableText classifiableText : classifiableTexts) {
+                CharacteristicValue idealValue = classifiableText.getCharacteristicValue(characteristic);
+                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
 
                 if (classifiedValue.getValue().equals(idealValue.getValue())) {
                     correctlyClassified++;
@@ -192,15 +193,15 @@ public class TrainTextService implements ITrainTextService {
 
     public List<DL4JClassifierWithEmbedding> createClassifiers3() throws IOException {
         // Получаем все характеристики
-        List<CharacteristicDto> characteristics = characteristicService.getAllCharacteristics();
+        List<Characteristic> characteristics = characteristicService.getAllCharacteristics();
         // Получаем весь словарь
-        List<VocabularyWordDto> vocabulary = vocabularyService.getAllVocabulary();
+        List<VocabularyWord> vocabulary = vocabularyService.getAllVocabulary();
 
         // Список для хранения классификаторов
         List<DL4JClassifierWithEmbedding> classifiers = new ArrayList<>();
 
         // Проходим по всем характеристикам, создавая классификаторы
-        for (CharacteristicDto characteristic : characteristics) {
+        for (Characteristic characteristic : characteristics) {
             // Создаем DL4JClassifier с соответствующей характеристикой и словарем
             DL4JClassifierWithEmbedding classifier = new DL4JClassifierWithEmbedding(null, characteristic, vocabulary);
             classifiers.add(classifier); // добавляем в список классификаторов
@@ -209,7 +210,7 @@ public class TrainTextService implements ITrainTextService {
         return classifiers; // возвращаем список классификаторов
     }
 
-    public void trainAndSaveClassifiers3(List<ClassifiableTextDto> classifiableTextForTrain,
+    public void trainAndSaveClassifiers3(List<ClassifiableText> classifiableTextForTrain,
                                          List<DL4JClassifierWithEmbedding> classifiers) throws IOException {
         for (DL4JClassifierWithEmbedding classifier : classifiers) {
             classifier.train(classifiableTextForTrain);

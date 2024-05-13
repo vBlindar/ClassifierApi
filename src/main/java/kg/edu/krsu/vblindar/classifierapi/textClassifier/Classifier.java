@@ -1,9 +1,10 @@
 package kg.edu.krsu.vblindar.classifierapi.textClassifier;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.VocabularyWordDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
+import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
 import lombok.Data;
 import org.encog.Encog;
@@ -25,14 +26,14 @@ import static org.encog.persist.EncogDirectoryPersistence.saveObject;
 
 @Data
 public class Classifier {
-    private final CharacteristicDto characteristic;
+    private final Characteristic characteristic;
     private final int inputLayerSize;
     private final int outputLayerSize;
     private final BasicNetwork network;
-    private List<VocabularyWordDto> vocabulary;
+    private List<VocabularyWord> vocabulary;
     private final FilteredUnigram nGramStrategy = new FilteredUnigram();
 
-    public Classifier(File trainedNetwork, CharacteristicDto characteristic, List<VocabularyWordDto> vocabulary) {
+    public Classifier(File trainedNetwork, Characteristic characteristic, List<VocabularyWord> vocabulary) {
         if (characteristic == null ||
                 characteristic.getName().isEmpty() ||
                 characteristic.getPossibleValues() == null ||
@@ -59,7 +60,7 @@ public class Classifier {
         }
     }
 
-    public Classifier(CharacteristicDto characteristic, List<VocabularyWordDto> vocabulary) {
+    public Classifier(Characteristic characteristic, List<VocabularyWord> vocabulary) {
         this(null, characteristic, vocabulary);
     }
 
@@ -87,7 +88,7 @@ public class Classifier {
         return network;
     }
 
-    public CharacteristicValueDto classify(ClassifiableTextDto classifiableText) {
+    public CharacteristicValue classify(ClassifiableText classifiableText) {
         double[] output = new double[outputLayerSize];
 
         // calculate output vector
@@ -97,10 +98,10 @@ public class Classifier {
         return convertVectorToCharacteristic(output);
     }
 
-    private CharacteristicValueDto convertVectorToCharacteristic(double[] vector) {
+    private CharacteristicValue convertVectorToCharacteristic(double[] vector) {
         int idOfMaxValue = getIdOfMaxValue(vector);
 
-        for (CharacteristicValueDto c : characteristic.getPossibleValues()) {
+        for (CharacteristicValue c : characteristic.getPossibleValues()) {
             if (c.getId() == idOfMaxValue) {
                 return c;
             }
@@ -137,11 +138,11 @@ public class Classifier {
 
     }
 
-    public CharacteristicDto getCharacteristic() {
+    public Characteristic getCharacteristic() {
         return characteristic;
     }
 
-    public void train(List<ClassifiableTextDto> classifiableTexts) {
+    public void train(List<ClassifiableText> classifiableTexts) {
         double[][] input = getInput(classifiableTexts);
         double[][] ideal = getIdeal(classifiableTexts);
 
@@ -158,60 +159,61 @@ public class Classifier {
 
     }
 
-    private double[][] getInput(List<ClassifiableTextDto> classifiableTexts) {
+    private double[][] getInput(List<ClassifiableText> classifiableTexts) {
         double[][] input = new double[classifiableTexts.size()][inputLayerSize];
 
 
         int i = 0;
 
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             input[i++] = getTextAsVectorOfWords(classifiableText);
         }
 
         return input;
     }
 
-    private double[][] getIdeal(List<ClassifiableTextDto> classifiableTexts) {
+    private double[][] getIdeal(List<ClassifiableText> classifiableTexts) {
         double[][] ideal = new double[classifiableTexts.size()][outputLayerSize];
 
 
         int i = 0;
 
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             ideal[i++] = getCharacteristicAsVector(classifiableText);
         }
 
         return ideal;
     }
 
-    private double[] getCharacteristicAsVector(ClassifiableTextDto classifiableText) {
+    private double[] getCharacteristicAsVector(ClassifiableText classifiableText) {
         double[] vector = new double[outputLayerSize];
-        var c = (int) classifiableText.getCharacteristicValue(characteristic).getId() - 1;
-        vector[c] = 1;
+        var value = classifiableText.getCharacteristicValue(characteristic).getId();
+        var id = (int)(value - 1);
+        vector[id] = 1;
         return vector;
     }
 
-    private double[] getTextAsVectorOfWords(ClassifiableTextDto classifiableText) {
+    private double[] getTextAsVectorOfWords(ClassifiableText classifiableText) {
         double[] vector = new double[inputLayerSize];
 
         Set<String> uniqueValues = nGramStrategy.getNGram(classifiableText.getText());
 
 
         for (String word : uniqueValues) {
-            VocabularyWordDto vw = findWordInVocabulary(word);
+            VocabularyWord vw = findWordInVocabulary(word);
 
             if (vw != null) { // word found in vocabulary
-                vector[(int) vw.getId() - 1] = 1;
+                vector[(int) (vw.getId() - 1)] = 1;
             }
         }
 
         return vector;
     }
 
-    private VocabularyWordDto findWordInVocabulary(String word) {
+    private VocabularyWord findWordInVocabulary(String word) {
         try {
 
-            return vocabulary.get(vocabulary.indexOf(VocabularyWordDto.builder().value(word).build()));
+            return vocabulary.get(vocabulary.indexOf(VocabularyWord.builder().value(word).build()));
         } catch (NullPointerException | IndexOutOfBoundsException e) {
             return null;
         }

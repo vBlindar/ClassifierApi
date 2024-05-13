@@ -1,6 +1,6 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,9 +13,9 @@ public interface ITextStorageService {
 
     void dataClassification(MultipartFile file) throws IOException;
 
-    List<ClassifiableTextDto> getClassifiableTexts(File file);
+    List<ClassifiableText> getClassifiableTexts(File file);
 
-    void fillData(List<ClassifiableTextDto> classifiableText,File file);
+    void fillData(List<ClassifiableText> classifiableText, File file);
     File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException;
     void deleteTempFile(File file);
 }

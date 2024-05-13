@@ -1,6 +1,7 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.service.ITextStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class TextStorageService implements ITextStorageService {
     }
 
     @Override
-    public void fillData(List<ClassifiableTextDto> classifiableText,File file){
+    public void fillData(List<ClassifiableText> classifiableText, File file){
         vocabularyService.saveVocabularyToStorage(classifiableText);
         characteristicService.saveCharacteristicsToStorage(classifiableText);
         classifiableTextService.saveClassifiableTextsToStorage(classifiableText);
@@ -39,8 +40,8 @@ public class TextStorageService implements ITextStorageService {
     }
 
     @Override
-    public List<ClassifiableTextDto> getClassifiableTexts(File file){
-        List<ClassifiableTextDto> classifiableTexts = new ArrayList<>();
+    public List<ClassifiableText> getClassifiableTexts(File file){
+        List<ClassifiableText> classifiableTexts = new ArrayList<>();
 
         try {
             classifiableTexts = excelReader.xlsxToClassifiableTexts(file, 1);

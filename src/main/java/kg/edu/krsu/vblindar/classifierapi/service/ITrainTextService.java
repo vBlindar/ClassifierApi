@@ -1,6 +1,7 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.Classifier;
 import org.springframework.stereotype.Component;
 
@@ -12,11 +13,11 @@ public interface ITrainTextService {
 
     List<Classifier> createClassifiers();
     void startClassification();
-    void trainAndSaveClassifiers(List<ClassifiableTextDto> classifiableTextForTrain,
+    void trainAndSaveClassifiers(List<ClassifiableText> classifiableTextForTrain,
                                  List<Classifier> classifiers);
 
     void checkClassifiersAccuracy(
-            List<ClassifiableTextDto> classifiableTexts,
+            List<ClassifiableText> classifiableTexts,
             List<Classifier> classifiers);
 
 }

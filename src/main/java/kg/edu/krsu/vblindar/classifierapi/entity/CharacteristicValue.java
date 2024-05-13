@@ -1,9 +1,6 @@
 package kg.edu.krsu.vblindar.classifierapi.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -13,6 +10,7 @@ import javax.persistence.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor(force = true)
+@ToString(of = {"value"})
 public class CharacteristicValue {
 
   @Id

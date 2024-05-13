@@ -1,9 +1,10 @@
 package kg.edu.krsu.vblindar.classifierapi.textClassifier;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.VocabularyWordDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
+import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -27,14 +28,14 @@ import java.util.List;
 import java.util.Set;
 
 public class DL4JClassifier {
-    private final CharacteristicDto characteristic;
+    private final Characteristic characteristic;
     private final MultiLayerNetwork network; // заменяем BasicNetwork
-    private List<VocabularyWordDto> vocabulary;
+    private List<VocabularyWord> vocabulary;
     private final int inputLayerSize;
     private final int outputLayerSize;
     private final FilteredUnigram nGramStrategy = new FilteredUnigram();
 
-    public DL4JClassifier(File trainedNetwork, CharacteristicDto characteristic, List<VocabularyWordDto> vocabulary) throws IOException {
+    public DL4JClassifier(File trainedNetwork, Characteristic characteristic, List<VocabularyWord> vocabulary) throws IOException {
         this.inputLayerSize = vocabulary.size();
         this.characteristic = characteristic;
         this.vocabulary = vocabulary;
@@ -75,7 +76,7 @@ public class DL4JClassifier {
     }
 
 
-    public void train(List<ClassifiableTextDto> classifiableTexts) {
+    public void train(List<ClassifiableText> classifiableTexts) {
         // Преобразование текстов в DataSet
         INDArray input = getInput(classifiableTexts);
         INDArray labels = getIdeal(classifiableTexts);
@@ -110,22 +111,22 @@ public class DL4JClassifier {
 
 
 
-    private INDArray getInput(List<ClassifiableTextDto> classifiableTexts) {
+    private INDArray getInput(List<ClassifiableText> classifiableTexts) {
         double[][] input = new double[classifiableTexts.size()][inputLayerSize];
 
         int i = 0;
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             input[i++] = getTextAsVectorOfWords(classifiableText);
         }
 
         return Nd4j.create(input);
     }
 
-    private INDArray getIdeal(List<ClassifiableTextDto> classifiableTexts) {
+    private INDArray getIdeal(List<ClassifiableText> classifiableTexts) {
         double[][] ideal = new double[classifiableTexts.size()][outputLayerSize];
 
         int i = 0;
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             ideal[i++] = getCharacteristicAsVector(classifiableText);
         }
 
@@ -133,15 +134,17 @@ public class DL4JClassifier {
     }
 
 
-    private double[] getCharacteristicAsVector(ClassifiableTextDto classifiableText) {
+    private double[] getCharacteristicAsVector(ClassifiableText classifiableText) {
         double[] vector = new double[outputLayerSize];
         long id = classifiableText.getCharacteristicValue(characteristic).getId();
         vector[(int)(id - 1)] = 1; // Set the index corresponding to the characteristic value to 1
         return vector;
     }
-    private int getWordIndex(ClassifiableTextDto text) {
-        VocabularyWordDto vw = findWordInVocabulary(text.getText()); // нахождение слова в словаре
-        return (vw != null) ? (int) vw.getId() : 0; // возвращает индекс или 0, если слово не найдено
+    private int getWordIndex(ClassifiableText text) {
+        VocabularyWord vw = findWordInVocabulary(text.getText());
+        var id = Integer.parseInt(String.valueOf(vw.getId()));
+        // нахождение слова в словаре
+        return (vw != null) ? (Integer.parseInt(String.valueOf(vw.getId()))) : 0; // возвращает индекс или 0, если слово не найдено
     }
 
 
@@ -152,13 +155,13 @@ public class DL4JClassifier {
     }
 
 
-    public CharacteristicDto getCharacteristic() {
+    public Characteristic getCharacteristic() {
         return characteristic;
     }
 
 
 
-    public CharacteristicValueDto classify(ClassifiableTextDto classifiableText) {
+    public CharacteristicValue classify(ClassifiableText classifiableText) {
         // Преобразуем текст в вектор признаков
         double[] inputArray = getTextAsVectorOfWords(classifiableText);
         // Преобразуем одномерный массив в двумерный, добавив дополнительное измерение
@@ -176,29 +179,29 @@ public class DL4JClassifier {
         return getCharacteristicValueByIndex(index);
     }
 
-    private VocabularyWordDto findWordInVocabulary(String word) {
-        for (VocabularyWordDto vw : vocabulary) {
+    private VocabularyWord findWordInVocabulary(String word) {
+        for (VocabularyWord vw : vocabulary) {
             if (vw.getValue().equals(word)) {
                 return vw;
             }
         }
         return null; // Возвращаем null, если слово не найдено
     }
-    private CharacteristicValueDto getCharacteristicValueByIndex(int index) {
-        for (CharacteristicValueDto value : characteristic.getPossibleValues()) {
+    private CharacteristicValue getCharacteristicValueByIndex(int index) {
+        for (CharacteristicValue value : characteristic.getPossibleValues()) {
             if ((value.getId() - 1) == index) {
                 return value;
             }
         }
         return null;
     }
-    private double[] getTextAsVectorOfWords(ClassifiableTextDto text) {
+    private double[] getTextAsVectorOfWords(ClassifiableText text) {
         double[] vector = new double[inputLayerSize];
         Set<String> words = nGramStrategy.getNGram(text.getText());
         for (String word : words) {
-            VocabularyWordDto vw = findWordInVocabulary(word);
+            VocabularyWord vw = findWordInVocabulary(word);
             if (vw != null) {
-                vector[(int) vw.getId() - 1] = 1.0;
+                vector[(int) (vw.getId() - 1)] = 1.0;
             }
         }
         return vector;
@@ -207,9 +210,10 @@ public class DL4JClassifier {
 
     private void checkVector(DataBuffer vector) {
         for (long i = 0; i < vector.length(); i++) {
-            if(vector.getDouble(i) <= 0.33){
-                throw new IllegalArgumentException("This text does not belong to any topic from the training data");
+            if(vector.getDouble(i) >= 0.33){
+               return;
             }
         }
+        throw new IllegalArgumentException("This text does not belong to any topic from the training data");
     }
 }

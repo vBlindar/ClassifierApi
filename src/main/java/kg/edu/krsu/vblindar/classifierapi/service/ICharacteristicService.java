@@ -1,7 +1,8 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -12,14 +13,14 @@ import java.util.Set;
 @Component
 public interface ICharacteristicService {
 
-    void saveCharacteristicsToStorage(List<ClassifiableTextDto> classifiableTexts);
+    void saveCharacteristicsToStorage(List<ClassifiableText> classifiableTexts);
 
-    List<CharacteristicDto> getAllCharacteristics();
+    List<Characteristic> getAllCharacteristics();
 
-    Set<CharacteristicDto> getCharacteristicsCatalog(List<ClassifiableTextDto> classifiableTexts);
-    void addNewCharacteristic(CharacteristicDto characteristicDto) throws IllegalArgumentException;
+    Set<Characteristic> getCharacteristicsCatalog(List<ClassifiableText> classifiableTexts);
+    void addNewCharacteristic(Characteristic characteristicDto) throws IllegalArgumentException;
 
-    CharacteristicDto findById(Long id);
+    Characteristic findById(Long id);
 
 
 }

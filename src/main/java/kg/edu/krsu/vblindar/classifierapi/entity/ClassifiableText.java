@@ -1,5 +1,6 @@
 package kg.edu.krsu.vblindar.classifierapi.entity;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Map;
 
 
 @Entity
@@ -27,5 +29,11 @@ public class ClassifiableText {
   @OneToMany(mappedBy = "id.classifiableTextId", cascade = CascadeType.ALL)
   private List<TextCharacteristicMapping> textCharacteristicMappings;
 
+  @Transient
+  private Map<Characteristic, CharacteristicValue> characteristics;
+
+  public CharacteristicValue getCharacteristicValue(Characteristic characteristic) {
+    return characteristics.get(characteristic);
+  }
 
 }

@@ -1,9 +1,10 @@
 package kg.edu.krsu.vblindar.classifierapi.textClassifier;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.VocabularyWordDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
+import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -28,14 +29,14 @@ import java.util.Set;
 
 public class DL4JClassifierWithEmbedding {
 
-    private final CharacteristicDto characteristic;
+    private final Characteristic characteristic;
     private final MultiLayerNetwork network; // заменяем BasicNetwork
-    private List<VocabularyWordDto> vocabulary;
+    private List<VocabularyWord> vocabulary;
     private final int inputLayerSize;
     private final int outputLayerSize;
     private final FilteredUnigram nGramStrategy = new FilteredUnigram();
 
-    public DL4JClassifierWithEmbedding(File trainedNetwork, CharacteristicDto characteristic, List<VocabularyWordDto> vocabulary) throws IOException {
+    public DL4JClassifierWithEmbedding(File trainedNetwork, Characteristic characteristic, List<VocabularyWord> vocabulary) throws IOException {
         this.inputLayerSize = vocabulary.size();
         this.characteristic = characteristic;
         this.vocabulary = vocabulary;
@@ -79,7 +80,7 @@ public class DL4JClassifierWithEmbedding {
         return network;
     }
 
-    public void train(List<ClassifiableTextDto> classifiableTexts) {
+    public void train(List<ClassifiableText> classifiableTexts) {
         int maxLength = 100; // Определите максимальную длину
         INDArray input = getInput(classifiableTexts, maxLength);
         INDArray labels = getIdeal(classifiableTexts);
@@ -97,7 +98,7 @@ public class DL4JClassifierWithEmbedding {
         System.out.println("Training complete");
     }
 
-//    public void train(List<ClassifiableTextDto> classifiableTexts) {
+//    public void train(List<ClassifiableText> classifiableTexts) {
 //
 //        INDArray input = getInput(classifiableTexts,100);
 //        INDArray labels = getIdeal(classifiableTexts);
@@ -131,22 +132,22 @@ public class DL4JClassifierWithEmbedding {
 
 
 
-//    private INDArray getInput(List<ClassifiableTextDto> classifiableTexts) {
+//    private INDArray getInput(List<ClassifiableText> classifiableTexts) {
 //        int[][] input = new int[classifiableTexts.size()][inputLayerSize];
 //
 //        int i = 0;
-//        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+//        for (ClassifiableText classifiableText : classifiableTexts) {
 //            input[i++] = getTextAsVectorOfWords(classifiableText);
 //        }
 //
 //        return Nd4j.create(input);
 //    }
 
-//    private INDArray getInput(List<ClassifiableTextDto> classifiableTexts, int maxLength) {
+//    private INDArray getInput(List<ClassifiableText> classifiableTexts, int maxLength) {
 //        int[][] input = new int[classifiableTexts.size()][maxLength];
 //
 //        int i = 0;
-//        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+//        for (ClassifiableText classifiableText : classifiableTexts) {
 //            input[i] = getTextAsVectorOfWords(classifiableText, maxLength);
 //            i++;
 //        }
@@ -154,19 +155,19 @@ public class DL4JClassifierWithEmbedding {
 //        return Nd4j.create(input);
 //    }
 
-    private INDArray getInput(List<ClassifiableTextDto> classifiableTexts, int maxLength) {
+    private INDArray getInput(List<ClassifiableText> classifiableTexts, int maxLength) {
         List<INDArray> inputs = new ArrayList<>();
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             int[] indices = getTextAsVectorOfWords(classifiableText, maxLength);
             inputs.add(Nd4j.create(indices, new int[]{1, maxLength}));  // Создание 2D INDArray для каждого примера
         }
         return Nd4j.concat(0, inputs.toArray(new INDArray[0]));  // Объединяем все INDArray в один для подачи в сеть
     }
-    private INDArray getIdeal(List<ClassifiableTextDto> classifiableTexts) {
+    private INDArray getIdeal(List<ClassifiableText> classifiableTexts) {
         double[][] ideal = new double[classifiableTexts.size()][outputLayerSize];
 
         int i = 0;
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             ideal[i++] = getCharacteristicAsVector(classifiableText);
         }
 
@@ -175,15 +176,15 @@ public class DL4JClassifierWithEmbedding {
 
 
 
-    private double[] getCharacteristicAsVector(ClassifiableTextDto classifiableText) {
+    private double[] getCharacteristicAsVector(ClassifiableText classifiableText) {
         double[] vector = new double[outputLayerSize];
         long id = classifiableText.getCharacteristicValue(characteristic).getId();
         vector[(int)(id - 1)] = 1; // Set the index corresponding to the characteristic value to 1
         return vector;
     }
-    private int getWordIndex(ClassifiableTextDto text) {
-        VocabularyWordDto vw = findWordInVocabulary(text.getText()); // нахождение слова в словаре
-        return (vw != null) ? (int) vw.getId() : 0; // возвращает индекс или 0, если слово не найдено
+    private int getWordIndex(ClassifiableText text) {
+        VocabularyWord vw = findWordInVocabulary(text.getText()); // нахождение слова в словаре
+        return (vw != null) ? Integer.parseInt(String.valueOf(vw.getId())) : 0; // возвращает индекс или 0, если слово не найдено
     }
 
 
@@ -193,13 +194,13 @@ public class DL4JClassifierWithEmbedding {
     }
 
 
-    public CharacteristicDto getCharacteristic() {
+    public Characteristic getCharacteristic() {
         return characteristic;
     }
 
 
 
-    public CharacteristicValueDto classify(ClassifiableTextDto classifiableText) {
+    public CharacteristicValue classify(ClassifiableText classifiableText) {
         // Преобразуем текст в вектор признаков
         int[] inputArray = getTextAsVectorOfWords(classifiableText,100);
         // Преобразуем одномерный массив в двумерный, добавив дополнительное измерение
@@ -216,28 +217,28 @@ public class DL4JClassifierWithEmbedding {
         return getCharacteristicValueByIndex(index);
     }
 
-    private VocabularyWordDto findWordInVocabulary(String word) {
-        for (VocabularyWordDto vw : vocabulary) {
+    private VocabularyWord findWordInVocabulary(String word) {
+        for (VocabularyWord vw : vocabulary) {
             if (vw.getValue().equals(word)) {
                 return vw;
             }
         }
         return null; // Возвращаем null, если слово не найдено
     }
-    private CharacteristicValueDto getCharacteristicValueByIndex(int index) {
-        for (CharacteristicValueDto value : characteristic.getPossibleValues()) {
+    private CharacteristicValue getCharacteristicValueByIndex(int index) {
+        for (CharacteristicValue value : characteristic.getPossibleValues()) {
             if ((value.getId() - 1) == index) {
                 return value;
             }
         }
         return null; // Или выбросить исключение, если ничего не найдено
     }
-//    private int[] getTextAsVectorOfWords(ClassifiableTextDto text) {
+//    private int[] getTextAsVectorOfWords(ClassifiableText text) {
 //        Set<String> words = nGramStrategy.getNGram(text.getText());
 //        int[] indices = new int[words.size()];
 //        int i = 0;
 //        for (String word : words) {
-//            VocabularyWordDto vw = findWordInVocabulary(word);
+//            VocabularyWord vw = findWordInVocabulary(word);
 //            if (vw != null) {
 //                indices[i++] = (int) vw.getId() - 1; // Индекс для EmbeddingLayer
 //            }
@@ -245,7 +246,7 @@ public class DL4JClassifierWithEmbedding {
 //        return indices;
 //    }
 
-    private int[] getTextAsVectorOfWords(ClassifiableTextDto text, int maxLength) {
+    private int[] getTextAsVectorOfWords(ClassifiableText text, int maxLength) {
         Set<String> words = nGramStrategy.getNGram(text.getText());
         int[] indices = new int[maxLength];  // Initialize with maxLength
         Arrays.fill(indices, 0);  // Fill with zeros for padding
@@ -253,9 +254,9 @@ public class DL4JClassifierWithEmbedding {
         int i = 0;
         for (String word : words) {
             if (i >= maxLength) break;  // Prevent exceeding the maximum length
-            VocabularyWordDto vw = findWordInVocabulary(word);
+            VocabularyWord vw = findWordInVocabulary(word);
             if (vw != null) {
-                indices[i++] = (int) vw.getId() - 1;  // Set index, subtract 1 if your IDs start from 1
+                indices[i++] = (int) (vw.getId() - 1);  // Set index, subtract 1 if your IDs start from 1
             }
         }
         return indices;

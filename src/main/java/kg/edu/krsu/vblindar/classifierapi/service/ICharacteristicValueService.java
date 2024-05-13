@@ -1,6 +1,6 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
+
 import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
 import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
 import org.springframework.stereotype.Component;
@@ -11,13 +11,13 @@ import java.util.List;
 public interface ICharacteristicValueService {
 
     void insertPossibleValue(Characteristic characteristic,
-                             CharacteristicValueDto characteristicValue);
+                             CharacteristicValue characteristicValue);
 
     CharacteristicValue searchCharacteristicPossibleValue(Characteristic characteristic,
-                                                          CharacteristicValueDto characteristicValue);
+                                                          CharacteristicValue characteristicValue);
 
     List<CharacteristicValue> findValuesByCharacteristicId(Long id);
 
-    CharacteristicValueDto findById(Long id);
+    CharacteristicValue findById(Long id);
 
 }

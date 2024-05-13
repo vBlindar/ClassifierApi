@@ -1,7 +1,7 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.VocabularyWordDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
 import kg.edu.krsu.vblindar.classifierapi.repository.VocabularyWordRepository;
@@ -9,10 +9,7 @@ import kg.edu.krsu.vblindar.classifierapi.service.IVocabularyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,21 +20,21 @@ public class VocabularyService implements IVocabularyService {
 
     private final FilteredUnigram filteredUnigram;
     @Override
-    public List<VocabularyWordDto> getAllVocabulary(){
-        return vocabularyWordRepository.findAll().stream().map(VocabularyWordDto::from).toList();
+    public List<VocabularyWord> getAllVocabulary(){
+        return vocabularyWordRepository.findAll();
     }
     @Override
-    public List<VocabularyWordDto> getVocabulary(List<ClassifiableTextDto> classifiableTexts) {
+    public List<VocabularyWord> getVocabulary(List<ClassifiableText> classifiableTexts) {
         if (classifiableTexts == null ||
                 classifiableTexts.isEmpty()) {
             throw new IllegalArgumentException();
         }
 
         Map<String, Integer> uniqueValues = new HashMap<>();
-        List<VocabularyWordDto> vocabulary = new ArrayList<>();
+        List<VocabularyWord> vocabulary = new ArrayList<>();
 
 
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
+        for (ClassifiableText classifiableText : classifiableTexts) {
             for (String word : filteredUnigram.getNGram(classifiableText.getText())) {
                 if (uniqueValues.containsKey(word)) {
                     uniqueValues.put(word, uniqueValues.get(word) + 1);
@@ -49,7 +46,7 @@ public class VocabularyService implements IVocabularyService {
 
         for (Map.Entry<String, Integer> entry : uniqueValues.entrySet()) {
             if (entry.getValue() > 3) {
-                vocabulary.add(VocabularyWordDto.builder()
+                vocabulary.add(VocabularyWord.builder()
                         .value(entry.getKey())
                         .build());
             }
@@ -61,8 +58,8 @@ public class VocabularyService implements IVocabularyService {
 
 
     @Override
-    public void saveVocabularyToStorage(List<ClassifiableTextDto> classifiableTexts) {
-        List<VocabularyWordDto> vocabulary = getVocabulary(classifiableTexts);
+    public void saveVocabularyToStorage(List<ClassifiableText> classifiableTexts) {
+        List<VocabularyWord> vocabulary = getVocabulary(classifiableTexts);
         var vocabularyInDb = vocabularyWordRepository.findAll();
         vocabulary.removeIf(word -> vocabularyInDb.stream().anyMatch(dbWord -> dbWord.getValue().equals(word.getValue())));
         saveWithVerification(vocabulary);
@@ -70,8 +67,8 @@ public class VocabularyService implements IVocabularyService {
     }
 
     @Override
-    public void saveWithVerification(List<VocabularyWordDto> words) {
-       var vocabulary = words.stream().map(VocabularyWordDto::on).collect(Collectors.toSet());
+    public void saveWithVerification(List<VocabularyWord> words) {
+       var vocabulary = new HashSet<>(words);
        vocabularyWordRepository.saveAll(vocabulary);
     }
 }

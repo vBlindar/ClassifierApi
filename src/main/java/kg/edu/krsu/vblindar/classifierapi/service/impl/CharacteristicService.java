@@ -1,9 +1,9 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+
 import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.repository.CharacteristicRepository;
 import kg.edu.krsu.vblindar.classifierapi.repository.CharacteristicValueRepository;
 import kg.edu.krsu.vblindar.classifierapi.service.ICharacteristicService;
@@ -23,12 +23,11 @@ public class CharacteristicService implements ICharacteristicService {
     private final CharacteristicRepository characteristicRepository;
     private final CharacteristicValueService characteristicValueService;
     @Override
-    public void saveCharacteristicsToStorage(List<ClassifiableTextDto> classifiableTexts) {
-        Set<CharacteristicDto> characteristics = getCharacteristicsCatalog(classifiableTexts);
-
-
-        for (CharacteristicDto characteristic : characteristics) {
+    public void saveCharacteristicsToStorage(List<ClassifiableText> classifiableTexts) {
+        Set<Characteristic> characteristics = getCharacteristicsCatalog(classifiableTexts);
+        for (Characteristic characteristic : characteristics) {
             try {
+
                 addNewCharacteristic(characteristic);
             } catch (IllegalArgumentException e) {
                 System.out.println("Empty of Already");
@@ -38,22 +37,22 @@ public class CharacteristicService implements ICharacteristicService {
     }
 
     @Override
-    public List<CharacteristicDto> getAllCharacteristics() {
+    public List<Characteristic> getAllCharacteristics() {
 
         var characteristics = characteristicRepository.findAll();
         for (Characteristic characteristic : characteristics) {
             characteristic.setPossibleValues(characteristicValueService.findValuesByCharacteristicId(characteristic.getId()));
         }
 
-        return characteristics.stream().map(CharacteristicDto::from).toList();
+        return characteristics;
     }
 
     @Override
-    public Set<CharacteristicDto> getCharacteristicsCatalog(List<ClassifiableTextDto> classifiableTexts) {
-        Set<CharacteristicDto> characteristics = new LinkedHashSet<>();
+    public Set<Characteristic> getCharacteristicsCatalog(List<ClassifiableText> classifiableTexts) {
+        Set<Characteristic> characteristics = new LinkedHashSet<>();
 
-        for (ClassifiableTextDto classifiableText : classifiableTexts) {
-            for (Map.Entry<CharacteristicDto, CharacteristicValueDto> entry :
+        for (ClassifiableText  classifiableText : classifiableTexts) {
+            for (Map.Entry<Characteristic , CharacteristicValue> entry :
                     classifiableText.getCharacteristics().entrySet()) {
                 characteristics.add(entry.getKey());
             }
@@ -63,35 +62,30 @@ public class CharacteristicService implements ICharacteristicService {
     }
 
     @Override
-    public void addNewCharacteristic(CharacteristicDto characteristicDto) throws IllegalArgumentException {
-        if (characteristicDto == null ||
-                characteristicDto.getName().isEmpty() ||
-                characteristicDto.getPossibleValues() == null ||
-                characteristicDto.getPossibleValues().isEmpty()) {
+    public void addNewCharacteristic(Characteristic  characteristic ) throws IllegalArgumentException {
+        if (characteristic  == null ||
+                characteristic .getName().isEmpty() ||
+                characteristic .getPossibleValues() == null ||
+                characteristic .getPossibleValues().isEmpty()) {
             throw new IllegalArgumentException("Characteristic and/or Possible values are null or empty");
         }
 
-        if (characteristicRepository.existsByName(characteristicDto.getName())) {
+        if (characteristicRepository.existsByName(characteristic .getName())) {
             throw new IllegalArgumentException("Characteristic already exists");
         }
 
-
-        var characteristic = Characteristic.builder()
-                .name(characteristicDto.getName())
-                .build();
-        characteristicRepository.saveAndFlush(characteristic);
-
-        for (CharacteristicValueDto possibleValue : characteristicDto.getPossibleValues()) {
+        for (CharacteristicValue  possibleValue : characteristic.getPossibleValues()) {
             characteristicValueService.insertPossibleValue(characteristic, possibleValue);
         }
+        characteristicRepository.saveAndFlush(characteristic);
+
 
 
     }
 
 
     @Override
-    public CharacteristicDto findById(Long id) {
-        var characteristic = characteristicRepository.findById(id).orElseThrow(IllegalArgumentException::new);
-        return CharacteristicDto.from(characteristic);
+    public Characteristic  findById(Long id) {
+        return characteristicRepository.findById(id).orElseThrow(IllegalArgumentException::new);
     }
 }

@@ -1,8 +1,8 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -17,15 +17,15 @@ import java.util.*;
 @Component
 public interface IExcelReader {
 
-    List<ClassifiableTextDto> xlsxToClassifiableTexts(File xlsxFile, int sheetNumber) throws IOException;
+    List<ClassifiableText> xlsxToClassifiableTexts(File xlsxFile, int sheetNumber) throws IOException;
 
-    List<ClassifiableTextDto> getClassifiableTextsDto(XSSFSheet sheet);
+    List<ClassifiableText> getClassifiableTexts(XSSFSheet sheet);
 
-    Map<CharacteristicDto, CharacteristicValueDto> getCharacteristicsValuesDto(Row row, List<CharacteristicDto> characteristics);
+    Map<Characteristic, CharacteristicValue> getCharacteristicsValues(Row row, List<Characteristic> characteristics);
 
-    List<CharacteristicDto> getCharacteristicsDto(XSSFSheet sheet);
+    List<Characteristic> getCharacteristics(XSSFSheet sheet);
 
-    Set<CharacteristicValueDto> getPossibleValues(XSSFSheet sheet, int index);
+    List<CharacteristicValue> getPossibleValues(XSSFSheet sheet, int index);
 
     String readTextFromFile(String path);
 }

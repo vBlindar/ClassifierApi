@@ -1,8 +1,9 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.CharacteristicValueDto;
-import kg.edu.krsu.vblindar.classifierapi.dto.ClassifiableTextDto;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.service.IClassifyService;
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.Classifier;
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.DL4JClassifier;
@@ -23,12 +24,12 @@ public class ClassifyService implements IClassifyService {
 
     @Override
     public String classifyText(String text,File file) {
-        ClassifiableTextDto classifiableText = ClassifiableTextDto.builder().text(text).build();
+        ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
         StringBuilder classifiedCharacteristics = new StringBuilder();
         var classifiers = createClassifiers(file);
         try {
             for (Classifier classifier : classifiers) {
-                CharacteristicValueDto classifiedValue = classifier.classify(classifiableText);
+                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
 
                 classifiedCharacteristics.append(classifier.getCharacteristic().getName()).append(": ").append(classifiedValue.getValue()).append("\n");
             }
@@ -45,7 +46,7 @@ public class ClassifyService implements IClassifyService {
         var characteristics = characteristicService.getAllCharacteristics();
         var vocabulary = vocabularyService.getAllVocabulary();
         List<Classifier> classifiers = new ArrayList<>();
-        for (CharacteristicDto characteristic : characteristics) {
+        for (Characteristic characteristic : characteristics) {
             Classifier classifier = new Classifier(file, characteristic, vocabulary);
             classifiers.add(classifier);
         }
@@ -54,14 +55,14 @@ public class ClassifyService implements IClassifyService {
 
 
     public String classifyText2(String text,File file) throws IOException {
-        ClassifiableTextDto classifiableText = ClassifiableTextDto.builder().text(text).build();
+        ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
         StringBuilder classifiedCharacteristics = new StringBuilder();
         var classifiers = createClassifiers2(file);
         try {
             for (DL4JClassifier classifier : classifiers) {
-                CharacteristicValueDto classifiedValue = classifier.classify(classifiableText);
+                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
 
-                classifiedCharacteristics.append(classifier.getCharacteristic().getName()).append(": ").append(classifiedValue.getValue()).append("\n");
+                classifiedCharacteristics.append(classifier.getCharacteristic().toString()).append(": ").append(classifiedValue.getValue()).append("\n");
             }
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -76,7 +77,7 @@ public class ClassifyService implements IClassifyService {
         var characteristics = characteristicService.getAllCharacteristics();
         var vocabulary = vocabularyService.getAllVocabulary();
         List<DL4JClassifier> classifiers = new ArrayList<>();
-        for (CharacteristicDto characteristic : characteristics) {
+        for (Characteristic characteristic : characteristics) {
             DL4JClassifier classifier = new DL4JClassifier(file, characteristic, vocabulary);
             classifiers.add(classifier);
         }
@@ -93,7 +94,7 @@ public class ClassifyService implements IClassifyService {
 
         File folder = new File(folderPath);
 
-        File[] files = folder.listFiles();
+        File[] files = folder.listFiles((dir, name) -> !name.equals(".DS_Store"));
 
         if (files != null && files.length > 0) {
             return files[0];
