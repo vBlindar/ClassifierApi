@@ -2,7 +2,8 @@ package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 
 import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
-import kg.edu.krsu.vblindar.classifierapi.service.ITextStorageService;
+import kg.edu.krsu.vblindar.classifierapi.entity.ImageCharacteristic;
+import kg.edu.krsu.vblindar.classifierapi.service.IStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,11 +17,12 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class TextStorageService implements ITextStorageService {
+public class StorageService implements IStorageService {
     private final ExcelReader excelReader;
     private final VocabularyService vocabularyService;
     private final CharacteristicService characteristicService;
     private final ClassifiableTextService classifiableTextService;
+    private final ImageCharacteristicService imageCharacteristicService;
 
     @Override
     public void dataClassification(MultipartFile file) throws IOException {
@@ -59,6 +61,12 @@ public class TextStorageService implements ITextStorageService {
             os.write(multipartFile.getBytes());
         }
         return file;
+    }
+
+    @Override
+    public void fillImagesCharacteristic(File file) {
+        File[] dirs = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
+        imageCharacteristicService.saveAllCharacteristics(dirs);
     }
 
     @Override

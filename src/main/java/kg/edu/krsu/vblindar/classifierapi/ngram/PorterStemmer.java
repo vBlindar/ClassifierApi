@@ -18,7 +18,7 @@ public class PorterStemmer {
   private static final Pattern P = Pattern.compile("ь$");
   private static final Pattern NN = Pattern.compile("нн$");
 
-  public static String doStem(String word) {
+  public String doStem(String word) {
     word = word.toLowerCase();
     word = word.replace('ё', 'е');
 

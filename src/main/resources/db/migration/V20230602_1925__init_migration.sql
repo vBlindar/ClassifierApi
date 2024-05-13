@@ -39,4 +39,11 @@ create table vocabulary
     value varchar(5000)
 );
 
+create table images_characteristics(
+    id bigserial primary key,
+    value varchar(50)
+
+
+);
+
 

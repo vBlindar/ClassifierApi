@@ -196,7 +196,7 @@ public class Classifier {
     private double[] getTextAsVectorOfWords(ClassifiableText classifiableText) {
         double[] vector = new double[inputLayerSize];
 
-        Set<String> uniqueValues = nGramStrategy.getNGram(classifiableText.getText());
+        Set<String> uniqueValues = nGramStrategy.getUnigram(classifiableText.getText());
 
 
         for (String word : uniqueValues) {

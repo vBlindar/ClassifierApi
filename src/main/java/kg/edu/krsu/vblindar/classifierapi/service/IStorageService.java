@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
-public interface ITextStorageService {
+public interface IStorageService {
 
     void dataClassification(MultipartFile file) throws IOException;
 
@@ -17,5 +17,7 @@ public interface ITextStorageService {
 
     void fillData(List<ClassifiableText> classifiableText, File file);
     File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException;
+
+    void fillImagesCharacteristic(File file);
     void deleteTempFile(File file);
 }

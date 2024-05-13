@@ -247,7 +247,7 @@ public class DL4JClassifierWithEmbedding {
 //    }
 
     private int[] getTextAsVectorOfWords(ClassifiableText text, int maxLength) {
-        Set<String> words = nGramStrategy.getNGram(text.getText());
+        Set<String> words = nGramStrategy.getUnigram(text.getText());
         int[] indices = new int[maxLength];  // Initialize with maxLength
         Arrays.fill(indices, 0);  // Fill with zeros for padding
 

@@ -9,12 +9,14 @@ import java.util.Set;
 @Component
 public class FilteredUnigram {
 
-    public Set<String> getNGram(String text) {
+    private final PorterStemmer stemmer = new PorterStemmer();
+
+    public Set<String> getUnigram(String text) {
 
         String[] words = clean(text).split("[ \n\t\r$+<>№=]");
 
         for (int i = 0; i < words.length; i++) {
-            words[i] = PorterStemmer.doStem(words[i]);
+            words[i] = stemmer.doStem(words[i]);
         }
 
         Set<String> uniqueValues = new LinkedHashSet<>(Arrays.asList(words));

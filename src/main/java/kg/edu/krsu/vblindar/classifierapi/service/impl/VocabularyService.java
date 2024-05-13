@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +34,7 @@ public class VocabularyService implements IVocabularyService {
 
 
         for (ClassifiableText classifiableText : classifiableTexts) {
-            for (String word : filteredUnigram.getNGram(classifiableText.getText())) {
+            for (String word : filteredUnigram.getUnigram(classifiableText.getText())) {
                 if (uniqueValues.containsKey(word)) {
                     uniqueValues.put(word, uniqueValues.get(word) + 1);
                 } else {

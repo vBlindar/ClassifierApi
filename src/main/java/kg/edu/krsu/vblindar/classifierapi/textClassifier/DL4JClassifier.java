@@ -197,7 +197,7 @@ public class DL4JClassifier {
     }
     private double[] getTextAsVectorOfWords(ClassifiableText text) {
         double[] vector = new double[inputLayerSize];
-        Set<String> words = nGramStrategy.getNGram(text.getText());
+        Set<String> words = nGramStrategy.getUnigram(text.getText());
         for (String word : words) {
             VocabularyWord vw = findWordInVocabulary(word);
             if (vw != null) {
