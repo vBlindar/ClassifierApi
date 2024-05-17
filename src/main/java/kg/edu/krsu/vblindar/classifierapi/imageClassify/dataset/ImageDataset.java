@@ -43,8 +43,6 @@ public class ImageDataset {
 
     private void init() {
         try {
-            // Init random numbers generator for splitting between train/test
-            // Internal components of image data pipeline
             Random randomNumbersGenerator = initRandomNumbersGenerator(SEED);
 
             // Init URL, URI and File, then check that the directory is good to go

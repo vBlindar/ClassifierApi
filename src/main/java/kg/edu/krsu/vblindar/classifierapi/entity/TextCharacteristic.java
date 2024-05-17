@@ -3,15 +3,16 @@ package kg.edu.krsu.vblindar.classifierapi.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
-@Table(name = "characteristic_value")
+@Table(name = "texts_characteristics")
 @Builder(toBuilder = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor(force = true)
 @ToString(of = {"value"})
-public class CharacteristicValue {
+public class TextCharacteristic {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,13 +21,12 @@ public class CharacteristicValue {
   @Column(length = 5000)
   private final String value;
 
-  @ManyToOne
-  @JoinColumn(name = "characteristic_id")
-  private Characteristic characteristic;
+  @OneToMany(mappedBy = "characteristic", cascade = CascadeType.ALL)
+  private List<ClassifiableText> texts;
 
   @Override
   public boolean equals(Object o) {
-    return ((o instanceof CharacteristicValue) && (this.value.equals(((CharacteristicValue) o).getValue())));
+    return ((o instanceof TextCharacteristic) && (this.value.equals(((TextCharacteristic) o).getValue())));
   }
 
   @Override

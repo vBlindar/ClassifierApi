@@ -1,13 +1,10 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 
-import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
-import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
-import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
-import kg.edu.krsu.vblindar.classifierapi.entity.ImageCharacteristic;
+import kg.edu.krsu.vblindar.classifierapi.entity.*;
 import kg.edu.krsu.vblindar.classifierapi.repository.ImageCharacteristicRepository;
 import kg.edu.krsu.vblindar.classifierapi.service.IClassifyService;
-import kg.edu.krsu.vblindar.classifierapi.textClassifier.Classifier;
+
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.DL4JClassifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,51 +27,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClassifyService implements IClassifyService {
 
-    private final CharacteristicService characteristicService;
+
     private final VocabularyService vocabularyService;
     private final ImageCharacteristicRepository imageCharacteristicRepository;
+    private final CharacteristicValueService characteristicValueService;
+
 
     @Override
-    public String classifyText(String text,File file) {
+    public String classifyText(String text, File file) throws IOException {
         ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
         StringBuilder classifiedCharacteristics = new StringBuilder();
-        var classifiers = createClassifiers(file);
-        try {
-            for (Classifier classifier : classifiers) {
-                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
-
-                classifiedCharacteristics.append(classifier.getCharacteristic().getName()).append(": ").append(classifiedValue.getValue()).append("\n");
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-
-        }
-
-        return classifiedCharacteristics.toString();
-    }
-
-    @Override
-    public List<Classifier> createClassifiers(File file) {
-        var characteristics = characteristicService.getAllCharacteristics();
-        var vocabulary = vocabularyService.getAllVocabulary();
-        List<Classifier> classifiers = new ArrayList<>();
-        for (Characteristic characteristic : characteristics) {
-            Classifier classifier = new Classifier(file, characteristic, vocabulary);
-            classifiers.add(classifier);
-        }
-        return classifiers;
-    }
-
-
-    public String classifyText2(String text,File file) throws IOException {
-        ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
-        StringBuilder classifiedCharacteristics = new StringBuilder();
-        var classifiers = createClassifiers2(file);
+        List<DL4JClassifier> classifiers = createClassifiers(file);
         try {
             for (DL4JClassifier classifier : classifiers) {
-                CharacteristicValue classifiedValue = classifier.classify(classifiableText);
+                TextCharacteristic classifiedValue = classifier.classify(classifiableText);
 
-                classifiedCharacteristics.append(classifier.getCharacteristic().toString()).append(": ").append(classifiedValue.getValue()).append("\n");
+                classifiedCharacteristics.append(classifiedValue.getValue()).append("\n");
             }
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -85,14 +53,15 @@ public class ClassifyService implements IClassifyService {
     }
 
 
-    public List<DL4JClassifier> createClassifiers2(File file) throws IOException {
-        var characteristics = characteristicService.getAllCharacteristics();
-        var vocabulary = vocabularyService.getAllVocabulary();
+    @Override
+    public List<DL4JClassifier> createClassifiers(File file) throws IOException {
+        List<TextCharacteristic> characteristics = characteristicValueService.getAllCharacteristics();
+        List<VocabularyWord> vocabulary = vocabularyService.getAllVocabulary();
         List<DL4JClassifier> classifiers = new ArrayList<>();
-        for (Characteristic characteristic : characteristics) {
-            DL4JClassifier classifier = new DL4JClassifier(file, characteristic, vocabulary);
+
+            DL4JClassifier classifier = new DL4JClassifier(file, vocabulary,characteristics);
             classifiers.add(classifier);
-        }
+
         return classifiers;
     }
 
@@ -116,8 +85,8 @@ public class ClassifyService implements IClassifyService {
 
     @Override
     public String classifyImage(MultipartFile file, File neural) throws IOException {
-        var img = convertMultipartFileToFile(file);
-        var characteristics = imageCharacteristicRepository.findAll();
+        File img = convertMultipartFileToFile(file);
+        List<ImageCharacteristic> characteristics = imageCharacteristicRepository.findAll();
 
         MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork(neural);
 
@@ -140,7 +109,8 @@ public class ClassifyService implements IClassifyService {
         return null;
     }
 
-    private File convertMultipartFileToFile(MultipartFile file) {
+    @Override
+    public File convertMultipartFileToFile(MultipartFile file) {
         File convertedFile = new File(file.getOriginalFilename());
         try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
             fos.write(file.getBytes());

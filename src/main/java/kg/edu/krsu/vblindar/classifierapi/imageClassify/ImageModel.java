@@ -1,20 +1,34 @@
 package kg.edu.krsu.vblindar.classifierapi.imageClassify;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deeplearning4j.eval.Evaluation;
+
+import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.conf.*;
 import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.nd4j.evaluation.classification.Evaluation;
+
+import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.model.stats.StatsListener;
+import org.deeplearning4j.ui.model.storage.FileStatsStorage;
+import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class ImageModel {
@@ -22,7 +36,6 @@ public class ImageModel {
     private static final int IMAGE_WIDTH = 32;
     private static final int IMAGE_CHANNELS = 3;
     private static int IMAGE_CLASSES;
-
     private static final int NETWORK_SEED = 666;
     private static final String NETWORK_FILEPATH = "models/imgClassifier/Network.zip";
 
@@ -37,6 +50,7 @@ public class ImageModel {
     private final DataSetIterator testSet;
     private MultiLayerConfiguration configuration;
     private MultiLayerNetwork network;
+
 
     public ImageModel(DataSetIterator trainSet, DataSetIterator testSet, int classesCount) {
         this.trainSet = trainSet;
@@ -92,19 +106,56 @@ public class ImageModel {
                 .build();
         configuration.setBackpropType(BackpropType.Standard);
 
+
     }
 
 
     private void initNetwork() {
         network = new MultiLayerNetwork(configuration);
         network.init();
+        StatsStorage statsStorage = new FileStatsStorage(new File("statistics/images-stats.dl4j"));
+        network.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(2));
     }
 
     public void train() {
-        for (int i = 0; i < LEARNING_NUMBER_OF_EPOCHS; i++) {
+        System.out.println("privet 1");
+        DataSet trainDataSet = convertIteratorToDataSet(trainSet);
+        System.out.println("privet 2");
+        for (int i = 0; i < 20; i++) {
+            System.out.println("privet 3");
             network.fit(trainSet);
-            log.info("Completed epoch " + i);
+            Evaluation eval = new Evaluation();
+            INDArray output = network.output(trainDataSet.getFeatures(), false);
+            eval.eval(trainDataSet.getLabels(), output);
+            System.out.println(eval.stats());
+
+            log.info("image model training - " + i + " epoch");
         }
+        System.out.println("privet 4");
+    }
+
+    private DataSet convertIteratorToDataSet(DataSetIterator iterator) {
+        List<DataSet> dataSets = new ArrayList<>();
+
+        while (iterator.hasNext()) {
+            dataSets.add(iterator.next());
+        }
+
+        if (!dataSets.isEmpty()) {
+            return combineDataSets(dataSets);
+        }
+
+        return null;
+    }
+
+    private DataSet combineDataSets(List<DataSet> dataSets) {
+        DataSet all = dataSets.get(0);
+        for (int i = 1; i < dataSets.size(); i++) {
+            DataSet next = dataSets.get(i);
+            all.setFeatures(Nd4j.vstack(all.getFeatures(), next.getFeatures()));
+            all.setLabels(Nd4j.vstack(all.getLabels(), next.getLabels()));
+        }
+        return all;
     }
 
     public void test() {

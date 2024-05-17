@@ -1,17 +1,21 @@
 package kg.edu.krsu.vblindar.classifierapi.textClassifier;
 
 
-import kg.edu.krsu.vblindar.classifierapi.entity.Characteristic;
-import kg.edu.krsu.vblindar.classifierapi.entity.CharacteristicValue;
+
+import kg.edu.krsu.vblindar.classifierapi.entity.TextCharacteristic;
 import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
+import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.deeplearning4j.ui.model.stats.StatsListener;
+import org.deeplearning4j.ui.model.storage.FileStatsStorage;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.evaluation.classification.Evaluation;
 import org.nd4j.linalg.activations.Activation;
@@ -28,18 +32,19 @@ import java.util.List;
 import java.util.Set;
 
 public class DL4JClassifier {
-    private final Characteristic characteristic;
     private final MultiLayerNetwork network; // заменяем BasicNetwork
     private List<VocabularyWord> vocabulary;
+    List<TextCharacteristic> allCharacteristic;
     private final int inputLayerSize;
     private final int outputLayerSize;
     private final FilteredUnigram nGramStrategy = new FilteredUnigram();
 
-    public DL4JClassifier(File trainedNetwork, Characteristic characteristic, List<VocabularyWord> vocabulary) throws IOException {
+    public DL4JClassifier(File trainedNetwork, List<VocabularyWord> vocabulary,
+                          List<TextCharacteristic> allCharacteristic) throws IOException {
+        this.allCharacteristic = allCharacteristic;
         this.inputLayerSize = vocabulary.size();
-        this.characteristic = characteristic;
         this.vocabulary = vocabulary;
-        this.outputLayerSize = characteristic.getPossibleValues().size();
+        this.outputLayerSize = allCharacteristic.size();
 
         if (trainedNetwork == null) {
             this.network = createNeuralNetwork();
@@ -72,6 +77,9 @@ public class DL4JClassifier {
 
         MultiLayerNetwork network = new MultiLayerNetwork(conf);
         network.init();
+        StatsStorage statsStorage = new FileStatsStorage(new File("statistics/ui-texts-stats.dl4j"));
+        network.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(10));
+
         return network;
     }
 
@@ -83,25 +91,15 @@ public class DL4JClassifier {
         DataSet dataSet = new DataSet(input, labels);
 
 
-        double errorThreshold = 0.01;  // Порог ошибки
-        double lastError = Double.MAX_VALUE;
         int epoch = 0;
 
-        while (lastError > errorThreshold) {
-            network.fit(dataSet);  // Обучение сети
-
-            // Вычисляем ошибку после каждой эпохи
+        while (epoch<50) {
+            network.fit(dataSet);
             Evaluation eval = new Evaluation();
             INDArray output = network.output(dataSet.getFeatures(), false);
             eval.eval(dataSet.getLabels(), output);
-            System.out.println(eval.stats());  // Или другая метрика, соответствующая вашей задаче
-            System.out.println("Epoch " + epoch + ": Error = " + lastError);
+            System.out.println(eval.stats());
             epoch++;
-
-            // Условие выхода для предотвращения бесконечного цикла
-            if (epoch > 100) {
-                break;
-            }
         }
 
 
@@ -136,13 +134,13 @@ public class DL4JClassifier {
 
     private double[] getCharacteristicAsVector(ClassifiableText classifiableText) {
         double[] vector = new double[outputLayerSize];
-        long id = classifiableText.getCharacteristicValue(characteristic).getId();
+        long id = classifiableText.getCharacteristic().getId();
         vector[(int)(id - 1)] = 1; // Set the index corresponding to the characteristic value to 1
         return vector;
     }
     private int getWordIndex(ClassifiableText text) {
         VocabularyWord vw = findWordInVocabulary(text.getText());
-        var id = Integer.parseInt(String.valueOf(vw.getId()));
+        int id = Integer.parseInt(String.valueOf(vw.getId()));
         // нахождение слова в словаре
         return (vw != null) ? (Integer.parseInt(String.valueOf(vw.getId()))) : 0; // возвращает индекс или 0, если слово не найдено
     }
@@ -155,13 +153,9 @@ public class DL4JClassifier {
     }
 
 
-    public Characteristic getCharacteristic() {
-        return characteristic;
-    }
 
 
-
-    public CharacteristicValue classify(ClassifiableText classifiableText) {
+    public TextCharacteristic classify(ClassifiableText classifiableText) {
         // Преобразуем текст в вектор признаков
         double[] inputArray = getTextAsVectorOfWords(classifiableText);
         // Преобразуем одномерный массив в двумерный, добавив дополнительное измерение
@@ -187,8 +181,8 @@ public class DL4JClassifier {
         }
         return null; // Возвращаем null, если слово не найдено
     }
-    private CharacteristicValue getCharacteristicValueByIndex(int index) {
-        for (CharacteristicValue value : characteristic.getPossibleValues()) {
+    private TextCharacteristic getCharacteristicValueByIndex(int index) {
+        for (TextCharacteristic value : allCharacteristic) {
             if ((value.getId() - 1) == index) {
                 return value;
             }

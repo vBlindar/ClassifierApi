@@ -59,7 +59,7 @@ public class VocabularyService implements IVocabularyService {
     @Override
     public void saveVocabularyToStorage(List<ClassifiableText> classifiableTexts) {
         List<VocabularyWord> vocabulary = getVocabulary(classifiableTexts);
-        var vocabularyInDb = vocabularyWordRepository.findAll();
+        List<VocabularyWord> vocabularyInDb = vocabularyWordRepository.findAll();
         vocabulary.removeIf(word -> vocabularyInDb.stream().anyMatch(dbWord -> dbWord.getValue().equals(word.getValue())));
         saveWithVerification(vocabulary);
 
@@ -67,7 +67,7 @@ public class VocabularyService implements IVocabularyService {
 
     @Override
     public void saveWithVerification(List<VocabularyWord> words) {
-       var vocabulary = new HashSet<>(words);
+       Set<VocabularyWord> vocabulary = new HashSet<>(words);
        vocabularyWordRepository.saveAll(vocabulary);
     }
 }

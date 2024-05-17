@@ -26,14 +26,9 @@ public class ClassifiableText {
   @Column(length = 5000)
   private final String text;
 
-  @OneToMany(mappedBy = "id.classifiableTextId", cascade = CascadeType.ALL)
-  private List<TextCharacteristicMapping> textCharacteristicMappings;
+  @ManyToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "characteristic_id")
+  private TextCharacteristic characteristic;
 
-  @Transient
-  private Map<Characteristic, CharacteristicValue> characteristics;
-
-  public CharacteristicValue getCharacteristicValue(Characteristic characteristic) {
-    return characteristics.get(characteristic);
-  }
 
 }

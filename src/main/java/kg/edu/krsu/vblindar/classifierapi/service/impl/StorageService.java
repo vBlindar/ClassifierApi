@@ -1,85 +1,110 @@
 package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 
+import kg.edu.krsu.vblindar.classifierapi.entity.TextCharacteristic;
 import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
-import kg.edu.krsu.vblindar.classifierapi.entity.ImageCharacteristic;
 import kg.edu.krsu.vblindar.classifierapi.service.IStorageService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.compress.utils.FileNameUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class StorageService implements IStorageService {
-    private final ExcelReader excelReader;
+
     private final VocabularyService vocabularyService;
-    private final CharacteristicService characteristicService;
+
+    private final CharacteristicValueService characteristicValueService;
     private final ClassifiableTextService classifiableTextService;
     private final ImageCharacteristicService imageCharacteristicService;
 
     @Override
-    public void dataClassification(MultipartFile file) throws IOException {
-        var xlsxFile = convertMultipartFileToFile(file);
-        var classifiableText = getClassifiableTexts(xlsxFile);
-        fillData(classifiableText,xlsxFile);
-
+    public void fillStorage(File file) {
+        File[] dirs = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
+        List<ClassifiableText> classifiableText = getClassifiableTexts(dirs[1]);
+        saveTexts(classifiableText);
+        Arrays.stream(dirs).forEach(System.out::println);
     }
 
     @Override
-    public void fillData(List<ClassifiableText> classifiableText, File file){
+    public void saveTexts(List<ClassifiableText> classifiableText) {
         vocabularyService.saveVocabularyToStorage(classifiableText);
-        characteristicService.saveCharacteristicsToStorage(classifiableText);
         classifiableTextService.saveClassifiableTextsToStorage(classifiableText);
-        deleteTempFile(file);
 
     }
 
     @Override
-    public List<ClassifiableText> getClassifiableTexts(File file){
+    public List<ClassifiableText> getClassifiableTexts(File file) {
         List<ClassifiableText> classifiableTexts = new ArrayList<>();
 
         try {
-            classifiableTexts = excelReader.xlsxToClassifiableTexts(file, 1);
-        } catch (IOException | IllegalArgumentException e) {
+            classifiableTexts = parseFile(file);
+
+        } catch (IllegalArgumentException e) {
             System.out.println("Problem with excel file");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         return classifiableTexts;
     }
 
     @Override
-    public File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException {
-        File file = new File("tempFile.xlsx");
-        try (OutputStream os = new FileOutputStream(file)) {
-            os.write(multipartFile.getBytes());
+    public List<ClassifiableText> parseFile(File file) throws IOException {
+        List<ClassifiableText> classifiableTexts = new ArrayList<>();
+        File[] characteristicsDir = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
+        List<TextCharacteristic> characteristicsEntity =
+                characteristicValueService.saveAllCharacteristic(characteristicsDir);
+        if (characteristicsDir != null && characteristicsDir.length == 0) {
+            throw new IOException("Directory with texts is empty!");
         }
-        return file;
+        for (File characteristic : characteristicsDir) {
+            List<ClassifiableText> temp = new ArrayList<>();
+            TextCharacteristic tc =
+                    characteristicsEntity.stream()
+                            .filter(c -> c.getValue().equals(characteristic.getName())).findFirst()
+                            .orElse(null);
+            File[] texts =
+                    characteristic.listFiles((dir, name) ->
+                            FileNameUtils.getExtension(name.toLowerCase()).equals("txt"));
+            for (File text : texts) {
+                ClassifiableText ct = ClassifiableText.builder()
+                        .characteristic(tc)
+                        .text(readAllLine(text))
+                        .build();
+                temp.add(ct);
+            }
+            classifiableTexts.addAll(temp);
+        }
+        return classifiableTexts;
     }
+
+    @Override
+    public String readAllLine(File text) {
+        StringBuilder result = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(text))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+
+                result.append(line);
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + text.getAbsolutePath());
+        } catch (IOException e) {
+            System.err.println("Error reading from file: " + text.getAbsolutePath());
+        }
+        return result.toString();
+    }
+
 
     @Override
     public void fillImagesCharacteristic(File file) {
         File[] dirs = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
         imageCharacteristicService.saveAllCharacteristics(dirs);
-    }
-
-    @Override
-    public void deleteTempFile(File file) {
-        if (file.exists()) {
-            if (file.delete()) {
-                System.out.println("Файл успешно удален.");
-            } else {
-                System.out.println("Не удалось удалить файл.");
-            }
-        } else {
-            System.out.println("Файл не существует.");
-        }
     }
 
 
