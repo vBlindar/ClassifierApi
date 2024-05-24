@@ -32,6 +32,8 @@ public class ApiController {
     private final ImageCharacteristicService imageCharacteristicService;
 
 
+
+
     @PostMapping("/storage")
     ResponseEntity<Boolean> fillStorage(String path) throws IOException {
         File file = new File(path);
@@ -75,8 +77,6 @@ public class ApiController {
     @PostMapping("/classify/text")
     ResponseEntity<String> classifyText(String text) throws IOException {
         File model = classifyService.getNetworkFile("text");
-        if(model==null)
-            throw new IOException("The text classification model is not trained");
         String response = classifyService.classifyText(text,model);
         return ResponseEntity.ok(response);
     }
@@ -84,10 +84,16 @@ public class ApiController {
     @PostMapping("/classify/image")
     ResponseEntity<String> classifyImage(MultipartFile file) throws IOException{
         File model = classifyService.getNetworkFile("img");
-        if(model==null)
-            throw new IllegalArgumentException("The text classification model is not trained");
         return ResponseEntity.ok(classifyService.classifyImage(file,model));
     }
+    @PostMapping("/classify")
+    ResponseEntity<String> classify(String text, MultipartFile[] files) throws IOException{
+        String response = classifyService.classify(text,files);
+        return ResponseEntity.ok(response);
+
+
+    }
+
 
 
 }

@@ -8,7 +8,7 @@ import java.io.File;
 import java.util.List;
 
 @Component
-public interface ICharacteristicValueService {
+public interface ITextCharacteristicService {
     List<TextCharacteristic> getAllCharacteristics();
 
     List<TextCharacteristic> saveAllCharacteristic(File[] characteristicsDir);

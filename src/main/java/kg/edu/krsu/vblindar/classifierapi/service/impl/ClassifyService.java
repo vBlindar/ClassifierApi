@@ -16,9 +16,13 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +34,7 @@ public class ClassifyService implements IClassifyService {
 
     private final VocabularyService vocabularyService;
     private final ImageCharacteristicRepository imageCharacteristicRepository;
-    private final CharacteristicValueService characteristicValueService;
+    private final TextCharacteristicService characteristicValueService;
 
 
     @Override
@@ -66,7 +70,7 @@ public class ClassifyService implements IClassifyService {
     }
 
     @Override
-    public File getNetworkFile(String type) {
+    public File getNetworkFile(String type) throws IOException {
         String folderPath = "./models";
         if (type.equals("img"))
             folderPath += "/imgClassifier";
@@ -80,7 +84,7 @@ public class ClassifyService implements IClassifyService {
         if (files != null && files.length > 0) {
             return files[0];
         }
-        return null;
+        throw new IOException("Network file for "+type+" not found");
     }
 
     @Override
@@ -110,16 +114,49 @@ public class ClassifyService implements IClassifyService {
     }
 
     @Override
-    public File convertMultipartFileToFile(MultipartFile file) {
-        File convertedFile = new File(file.getOriginalFilename());
-        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
-            fos.write(file.getBytes());
+    public File convertMultipartFileToFile(MultipartFile file) throws IOException {
 
-        } catch (IOException e) {
-            log.error("Error converting multipartFile to file", e);
+        InputStream inputStream = file.getInputStream();
+        BufferedImage originalImage = ImageIO.read(inputStream);
+
+        // Изменение размера изображения до 32x32
+        BufferedImage resizedImage = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics2D = resizedImage.createGraphics();
+        graphics2D.drawImage(originalImage.getScaledInstance(32, 32, Image.SCALE_SMOOTH), 0, 0, null);
+        graphics2D.dispose();
+
+        // Конвертация BufferedImage в File
+        File outputFile = new File("resizedImage.png");
+        ImageIO.write(resizedImage, "png", outputFile);
+
+        return outputFile;
+//
+//        File convertedFile = new File(file.getOriginalFilename());
+//        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
+//            fos.write(file.getBytes());
+//
+//        } catch (IOException e) {
+//            log.error("Error converting multipartFile to file", e);
+//        }
+//
+//        return convertedFile;
+    }
+
+    @Override
+    public String classify(String text, MultipartFile[] files) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        File textNetwork = getNetworkFile("text");
+        File imageNetwork = getNetworkFile("image");
+        sb.append(classifyText(text,textNetwork));
+        sb.append(System.lineSeparator());
+        for (MultipartFile file : files) {
+            sb.append(file.getOriginalFilename())
+                    .append(":")
+                    .append(classifyImage(file,imageNetwork))
+                    .append(System.lineSeparator());
         }
 
-        return convertedFile;
+        return sb.toString();
     }
 
 }

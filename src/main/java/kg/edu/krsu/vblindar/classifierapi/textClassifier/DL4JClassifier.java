@@ -138,13 +138,6 @@ public class DL4JClassifier {
         vector[(int)(id - 1)] = 1; // Set the index corresponding to the characteristic value to 1
         return vector;
     }
-    private int getWordIndex(ClassifiableText text) {
-        VocabularyWord vw = findWordInVocabulary(text.getText());
-        int id = Integer.parseInt(String.valueOf(vw.getId()));
-        // нахождение слова в словаре
-        return (vw != null) ? (Integer.parseInt(String.valueOf(vw.getId()))) : 0; // возвращает индекс или 0, если слово не найдено
-    }
-
 
 
 

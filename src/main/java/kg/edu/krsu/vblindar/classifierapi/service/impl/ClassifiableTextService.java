@@ -3,7 +3,6 @@ package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 
-import kg.edu.krsu.vblindar.classifierapi.repository.CharacteristicValueRepository;
 import kg.edu.krsu.vblindar.classifierapi.repository.ClassifiableTextRepository;
 
 import kg.edu.krsu.vblindar.classifierapi.service.IClassifiableTextService;
@@ -27,7 +26,7 @@ public class ClassifiableTextService implements IClassifiableTextService {
 
     }
 
-
+    @Override
     public List<ClassifiableText> getAllTexts() {
         List<ClassifiableText> texts = classifiableTextRepository.findAll();
 

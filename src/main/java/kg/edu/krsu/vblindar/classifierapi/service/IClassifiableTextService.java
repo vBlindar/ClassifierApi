@@ -1,7 +1,6 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
 
-import kg.edu.krsu.vblindar.classifierapi.entity.TextCharacteristic;
 import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +13,8 @@ public interface IClassifiableTextService {
 
 
     List<ClassifiableText> collectAndShuffleTexts(Map<String, List<ClassifiableText>> splitMap, String key);
+
+    List<ClassifiableText> getAllTexts();
 
     Map<String, List<ClassifiableText>> splitTextsForTrainingAndTesting();
 

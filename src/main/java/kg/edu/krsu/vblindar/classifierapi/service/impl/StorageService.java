@@ -17,7 +17,7 @@ public class StorageService implements IStorageService {
 
     private final VocabularyService vocabularyService;
 
-    private final CharacteristicValueService characteristicValueService;
+    private final TextCharacteristicService characteristicValueService;
     private final ClassifiableTextService classifiableTextService;
     private final ImageCharacteristicService imageCharacteristicService;
 

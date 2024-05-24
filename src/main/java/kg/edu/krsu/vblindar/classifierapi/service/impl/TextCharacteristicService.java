@@ -3,10 +3,9 @@ package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 
 import kg.edu.krsu.vblindar.classifierapi.entity.TextCharacteristic;
-import kg.edu.krsu.vblindar.classifierapi.repository.CharacteristicValueRepository;
-import kg.edu.krsu.vblindar.classifierapi.service.ICharacteristicValueService;
+import kg.edu.krsu.vblindar.classifierapi.repository.TextCharacteristicRepository;
+import kg.edu.krsu.vblindar.classifierapi.service.ITextCharacteristicService;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -15,12 +14,12 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class CharacteristicValueService implements ICharacteristicValueService {
-    private final CharacteristicValueRepository characteristicValueRepository;
+public class TextCharacteristicService implements ITextCharacteristicService {
+    private final TextCharacteristicRepository textCharacteristicRepository;
 
     @Override
     public List<TextCharacteristic> getAllCharacteristics() {
-        return characteristicValueRepository.findAll();
+        return textCharacteristicRepository.findAll();
     }
 
     @Override
@@ -34,7 +33,7 @@ public class CharacteristicValueService implements ICharacteristicValueService {
             );
         }
 
-        return characteristicValueRepository.saveAll(characteristics);
+        return textCharacteristicRepository.saveAll(characteristics);
     }
 
 }

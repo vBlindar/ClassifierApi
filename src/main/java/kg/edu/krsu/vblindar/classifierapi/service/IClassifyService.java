@@ -18,9 +18,11 @@ public interface IClassifyService {
 
     List<DL4JClassifier> createClassifiers(File file) throws IOException;
 
-    File getNetworkFile(String type);
+    File getNetworkFile(String type) throws IOException;
 
     String classifyImage(MultipartFile file, File model) throws IOException;
 
-    File convertMultipartFileToFile(MultipartFile file);
+    File convertMultipartFileToFile(MultipartFile file) throws IOException;
+
+    String classify(String text, MultipartFile[] files) throws IOException;
 }

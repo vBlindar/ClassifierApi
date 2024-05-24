@@ -23,7 +23,7 @@ public class TrainTextService implements ITrainTextService {
 
     private final VocabularyService vocabularyService;
     private final ClassifiableTextService classifiableTextService;
-    private final CharacteristicValueService characteristicValueService;
+    private final TextCharacteristicService characteristicValueService;
 
     @Override
     public void trainAndSaveClassifiers(List<ClassifiableText> classifiableTextForTrain,
