@@ -26,36 +26,35 @@ public class TrainTextService implements ITrainTextService {
     private final TextCharacteristicService characteristicValueService;
 
     @Override
-    public void trainAndSaveClassifiers(List<ClassifiableText> classifiableTextForTrain,
-                                        List<DL4JClassifier> classifiers) throws IOException {
-        for (DL4JClassifier classifier : classifiers) {
+    public void trainAndSaveTextClassifier(List<ClassifiableText> classifiableTextForTrain,
+                                        DL4JClassifier classifier) throws IOException {
+
             classifier.train(classifiableTextForTrain);
             classifier.saveTrainedClassifier(new File("./models/textClassifier/" + classifier.toString()));
-        }
+
 
     }
 
     @Override
     public void startClassification() throws IOException {
 
-        List<DL4JClassifier> classifiers = createClassifiers();
+        DL4JClassifier classifier = createTextClassifier();
 
 
         Map<String, List<ClassifiableText>> data = classifiableTextService.splitTextsForTrainingAndTesting();
         List<ClassifiableText> training = classifiableTextService.collectAndShuffleTexts(data, "training");
         List<ClassifiableText> testing = classifiableTextService.collectAndShuffleTexts(data, "testing");
 
-        trainAndSaveClassifiers(training, classifiers);
+        trainAndSaveTextClassifier(training, classifier);
 
-        checkClassifiersAccuracy(testing, classifiers);
+        checkTextClassifierAccuracy(testing, classifier);
     }
 
     @Override
-    public void checkClassifiersAccuracy(
+    public void checkTextClassifierAccuracy(
             List<ClassifiableText> classifiableTexts,
-            List<DL4JClassifier> classifiers) {
+            DL4JClassifier classifier) {
 
-        for (DL4JClassifier classifier : classifiers) {
 
             int correctlyClassified = 0;
 
@@ -72,24 +71,19 @@ public class TrainTextService implements ITrainTextService {
             System.out.println((String.format("Accuracy of Classifier for Theme " +
                             "characteristic: %.2f%%",
                     accuracy)));
-        }
+
     }
 
 
     @Override
-    public List<DL4JClassifier> createClassifiers() throws IOException {
+    public DL4JClassifier createTextClassifier() throws IOException {
 
         List<TextCharacteristic> characteristics = characteristicValueService.getAllCharacteristics();
 
         List<VocabularyWord> vocabulary = vocabularyService.getAllVocabulary();
 
+       return new DL4JClassifier(null, vocabulary, characteristics);
 
-        List<DL4JClassifier> classifiers = new ArrayList<>();
-
-        DL4JClassifier classifier = new DL4JClassifier(null, vocabulary, characteristics);
-        classifiers.add(classifier);
-
-        return classifiers;
     }
 
 

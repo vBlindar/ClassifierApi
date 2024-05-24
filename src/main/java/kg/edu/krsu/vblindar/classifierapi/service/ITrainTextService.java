@@ -14,14 +14,14 @@ import java.util.List;
 public interface ITrainTextService {
 
 
-    void trainAndSaveClassifiers(List<ClassifiableText> classifiableTextForTrain,
-                                 List<DL4JClassifier> classifiers) throws IOException;
+    void trainAndSaveTextClassifier(List<ClassifiableText> classifiableTextForTrain,
+                                 DL4JClassifier classifier) throws IOException;
 
     void startClassification() throws IOException;
 
-    void checkClassifiersAccuracy(
+    void checkTextClassifierAccuracy(
             List<ClassifiableText> classifiableTexts,
-            List<DL4JClassifier> classifiers);
+            DL4JClassifier classifier);
 
-    List<DL4JClassifier> createClassifiers() throws IOException;
+    DL4JClassifier createTextClassifier() throws IOException;
 }

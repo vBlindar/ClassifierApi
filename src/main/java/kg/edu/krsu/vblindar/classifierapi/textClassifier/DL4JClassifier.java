@@ -85,7 +85,6 @@ public class DL4JClassifier {
 
 
     public void train(List<ClassifiableText> classifiableTexts) {
-        // Преобразование текстов в DataSet
         INDArray input = getInput(classifiableTexts);
         INDArray labels = getIdeal(classifiableTexts);
         DataSet dataSet = new DataSet(input, labels);

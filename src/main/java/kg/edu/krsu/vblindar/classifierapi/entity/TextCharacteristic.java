@@ -24,13 +24,5 @@ public class TextCharacteristic {
   @OneToMany(mappedBy = "characteristic", cascade = CascadeType.ALL)
   private List<ClassifiableText> texts;
 
-  @Override
-  public boolean equals(Object o) {
-    return ((o instanceof TextCharacteristic) && (this.value.equals(((TextCharacteristic) o).getValue())));
-  }
 
-  @Override
-  public int hashCode() {
-    return this.value.hashCode();
-  }
 }

@@ -60,32 +60,6 @@ public class ImageModel {
         this.initNetwork();
     }
 
-    private static Layer convLayer(int nIn, int nOut) {
-        return new ConvolutionLayer.Builder()
-                .kernelSize(CONVOLUTION_FILTER_SIZE, CONVOLUTION_FILTER_SIZE)
-                .stride(CONVOLUTION_FILTER_SHIFT, CONVOLUTION_FILTER_SHIFT)
-                .nIn(nIn)
-                .nOut(nOut)
-                .activation(Activation.IDENTITY)
-                .build();
-    }
-
-    private static Layer convLayer(int nOut) {
-        return new ConvolutionLayer.Builder()
-                .kernelSize(CONVOLUTION_FILTER_SIZE, CONVOLUTION_FILTER_SIZE)
-                .stride(CONVOLUTION_FILTER_SHIFT, CONVOLUTION_FILTER_SHIFT)
-                .nOut(nOut)
-                .activation(Activation.IDENTITY)
-                .build();
-    }
-
-    private static Layer downsamplingLayer() {
-        return new SubsamplingLayer.Builder()
-                .poolingType(SubsamplingLayer.PoolingType.MAX)
-                .kernelSize(CONVOLUTION_POOL_SIZE, CONVOLUTION_POOL_SIZE)
-                .stride(CONVOLUTION_POOL_SHIFT, CONVOLUTION_POOL_SHIFT)
-                .build();
-    }
 
     private void initConfig() {
 
@@ -95,10 +69,29 @@ public class ImageModel {
                 .weightInit(WeightInit.XAVIER)
                 .l2(1e-4)
                 .list()
-                .layer(0, convLayer(IMAGE_CHANNELS, 64))
-                .layer(1, downsamplingLayer())
-                .layer(2, convLayer(128))
-                .layer(3, downsamplingLayer())
+                .layer(0, new ConvolutionLayer.Builder()
+                        .kernelSize(CONVOLUTION_FILTER_SIZE, CONVOLUTION_FILTER_SIZE)
+                        .stride(CONVOLUTION_FILTER_SHIFT, CONVOLUTION_FILTER_SHIFT)
+                        .nIn(IMAGE_CHANNELS)
+                        .nOut(64)
+                        .activation(Activation.IDENTITY)
+                        .build())
+                .layer(1, new SubsamplingLayer.Builder()
+                        .poolingType(SubsamplingLayer.PoolingType.MAX)
+                        .kernelSize(CONVOLUTION_POOL_SIZE, CONVOLUTION_POOL_SIZE)
+                        .stride(CONVOLUTION_POOL_SHIFT, CONVOLUTION_POOL_SHIFT)
+                        .build())
+                .layer(2, new ConvolutionLayer.Builder()
+                        .kernelSize(CONVOLUTION_FILTER_SIZE, CONVOLUTION_FILTER_SIZE)
+                        .stride(CONVOLUTION_FILTER_SHIFT, CONVOLUTION_FILTER_SHIFT)
+                        .nOut(128)
+                        .activation(Activation.IDENTITY)
+                        .build())
+                .layer(3, new SubsamplingLayer.Builder()
+                        .poolingType(SubsamplingLayer.PoolingType.MAX)
+                        .kernelSize(CONVOLUTION_POOL_SIZE, CONVOLUTION_POOL_SIZE)
+                        .stride(CONVOLUTION_POOL_SHIFT, CONVOLUTION_POOL_SHIFT)
+                        .build())
                 .layer(4, new DenseLayer.Builder().activation(Activation.RELU).nOut(4800).build())
                 .layer(5, new DenseLayer.Builder().activation(Activation.RELU).nOut(1200).build())
                 .layer(6, new OutputLayer.Builder().lossFunction(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD).activation(Activation.SOFTMAX).nOut(IMAGE_CLASSES).build())
@@ -118,20 +111,15 @@ public class ImageModel {
     }
 
     public void train() {
-        System.out.println("privet 1");
         DataSet trainDataSet = convertIteratorToDataSet(trainSet);
-        System.out.println("privet 2");
-        for (int i = 0; i < 20; i++) {
-            System.out.println("privet 3");
+        for (int i = 0; i < LEARNING_NUMBER_OF_EPOCHS; i++) {
             network.fit(trainSet);
             Evaluation eval = new Evaluation();
             INDArray output = network.output(trainDataSet.getFeatures(), false);
             eval.eval(trainDataSet.getLabels(), output);
-            System.out.println(eval.stats());
 
             log.info("image model training - " + i + " epoch");
         }
-        System.out.println("privet 4");
     }
 
     private DataSet convertIteratorToDataSet(DataSetIterator iterator) {
