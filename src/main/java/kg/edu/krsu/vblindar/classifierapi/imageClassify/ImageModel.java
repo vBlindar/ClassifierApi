@@ -1,5 +1,8 @@
 package kg.edu.krsu.vblindar.classifierapi.imageClassify;
 
+
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import org.deeplearning4j.core.storage.StatsStorage;
@@ -24,11 +27,14 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+
 import java.util.List;
+
 
 @Slf4j
 public class ImageModel {
@@ -50,7 +56,11 @@ public class ImageModel {
     private final DataSetIterator testSet;
     private MultiLayerConfiguration configuration;
     private MultiLayerNetwork network;
-
+    public ImageModel(DataSetIterator trainSet, DataSetIterator testSet, File model) throws IOException {
+        this.network = ModelSerializer.restoreMultiLayerNetwork(model);
+        this.trainSet = trainSet;
+        this.testSet = testSet;
+    }
 
     public ImageModel(DataSetIterator trainSet, DataSetIterator testSet, int classesCount) {
         this.trainSet = trainSet;
@@ -65,7 +75,7 @@ public class ImageModel {
 
         configuration = new NeuralNetConfiguration.Builder()
                 .seed(NETWORK_SEED)
-                .updater(new Nesterovs(1e-2, 0.9)) // Integrated learning rate and momentum
+                .updater(new Nesterovs(1e-2, 0.9))
                 .weightInit(WeightInit.XAVIER)
                 .l2(1e-4)
                 .list()
@@ -107,7 +117,7 @@ public class ImageModel {
         network = new MultiLayerNetwork(configuration);
         network.init();
         StatsStorage statsStorage = new FileStatsStorage(new File("statistics/images-stats.dl4j"));
-        network.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(2));
+        network.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(50));
     }
 
     public void train() {
@@ -117,8 +127,19 @@ public class ImageModel {
             Evaluation eval = new Evaluation();
             INDArray output = network.output(trainDataSet.getFeatures(), false);
             eval.eval(trainDataSet.getLabels(), output);
-
+            logStatsToFile(eval.stats(),null,"EPOCH: "+ i+1);
             log.info("image model training - " + i + " epoch");
+        }
+    }
+
+    private static void logStatsToFile(String stats, String filePath,String epoch) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/vlad_557/Desktop/инс/ClassifierApi/logs/img.txt", true))) {
+            writer.write(epoch);
+            writer.newLine();
+            writer.write(stats);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -149,9 +170,10 @@ public class ImageModel {
     public void test() {
         Evaluation evaluationOnTrain = network.evaluate(trainSet);
         System.out.println(evaluationOnTrain.stats());
-
+        logStatsToFile(evaluationOnTrain.stats(),null,"RESULTS ON TRAINING DATA");
         Evaluation evaluationOnTest = network.evaluate(testSet);
         System.out.println(evaluationOnTest.stats());
+        logStatsToFile(evaluationOnTrain.stats(),null,"RESULTS ON TESTING DATA");
     }
 
     public void save() throws IOException {

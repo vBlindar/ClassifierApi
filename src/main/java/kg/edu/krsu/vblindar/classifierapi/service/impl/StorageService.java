@@ -103,8 +103,15 @@ public class StorageService implements IStorageService {
 
     @Override
     public void fillImagesCharacteristic(File file) {
-        File[] dirs = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
-        imageCharacteristicService.saveAllCharacteristics(dirs);
+        File[] dirs = file.listFiles();
+        for (File dir : dirs) {
+            System.out.println(dir.getName());
+            if(dir.getName().contains(".DS_Store")){
+                dir.delete();
+            }
+        }
+        File[] dirs2 = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
+        imageCharacteristicService.saveAllCharacteristics(dirs2);
     }
 
 

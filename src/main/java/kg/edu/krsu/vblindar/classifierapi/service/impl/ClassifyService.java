@@ -2,6 +2,7 @@ package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 
 import kg.edu.krsu.vblindar.classifierapi.entity.*;
+import kg.edu.krsu.vblindar.classifierapi.entity.dto.Answer;
 import kg.edu.krsu.vblindar.classifierapi.repository.ImageCharacteristicRepository;
 import kg.edu.krsu.vblindar.classifierapi.service.IClassifyService;
 
@@ -16,15 +17,13 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -38,7 +37,8 @@ public class ClassifyService implements IClassifyService {
 
 
     @Override
-    public String classifyText(String text, File file) throws IOException {
+    public Map<Boolean, String> classifyText(String text, File file) throws IOException {
+        Map<Boolean, String> map = new HashMap<>();
         ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
         StringBuilder classifiedCharacteristics = new StringBuilder();
         List<DL4JClassifier> classifiers = createClassifiers(file);
@@ -46,14 +46,15 @@ public class ClassifyService implements IClassifyService {
             for (DL4JClassifier classifier : classifiers) {
                 TextCharacteristic classifiedValue = classifier.classify(classifiableText);
 
-                classifiedCharacteristics.append(classifiedValue.getValue()).append("\n");
+                classifiedCharacteristics.append(classifiedValue.getValue());
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
+            map.put(Boolean.FALSE, e.getMessage());
+            return map;
 
         }
-
-        return classifiedCharacteristics.toString();
+        map.put(Boolean.TRUE,classifiedCharacteristics.toString());
+        return map;
     }
 
 
@@ -63,8 +64,8 @@ public class ClassifyService implements IClassifyService {
         List<VocabularyWord> vocabulary = vocabularyService.getAllVocabulary();
         List<DL4JClassifier> classifiers = new ArrayList<>();
 
-            DL4JClassifier classifier = new DL4JClassifier(file, vocabulary,characteristics);
-            classifiers.add(classifier);
+        DL4JClassifier classifier = new DL4JClassifier(file, vocabulary, characteristics);
+        classifiers.add(classifier);
 
         return classifiers;
     }
@@ -84,11 +85,12 @@ public class ClassifyService implements IClassifyService {
         if (files != null && files.length > 0) {
             return files[0];
         }
-        throw new IOException("Network file for "+type+" not found");
+        throw new IOException("Network file for " + type + " not found");
     }
 
     @Override
-    public String classifyImage(MultipartFile file, File neural) throws IOException {
+    public Map<Boolean, String> classifyImage(MultipartFile file, File neural) throws IOException {
+        Map<Boolean,String> map = new HashMap<>();
         File img = convertMultipartFileToFile(file);
         List<ImageCharacteristic> characteristics = imageCharacteristicRepository.findAll();
 
@@ -105,58 +107,41 @@ public class ClassifyService implements IClassifyService {
         int classIdx = output.argMax(1).getInt(0) + 1;
         img.delete();
         for (ImageCharacteristic characteristic : characteristics) {
-            if(characteristic.getId()==classIdx)
-                return characteristic.getValue();
+            if (characteristic.getId() == classIdx){
+                map.put(Boolean.TRUE,characteristic.getValue());
+                return map;
+            }
         }
 
-
-        return null;
+        map.put(Boolean.FALSE,"This image does not belong to any topic from the training data");
+        return map;
     }
 
     @Override
     public File convertMultipartFileToFile(MultipartFile file) throws IOException {
 
-        InputStream inputStream = file.getInputStream();
-        BufferedImage originalImage = ImageIO.read(inputStream);
+        File convertedFile = new File(file.getOriginalFilename());
+        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
+            fos.write(file.getBytes());
 
-        // Изменение размера изображения до 32x32
-        BufferedImage resizedImage = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D graphics2D = resizedImage.createGraphics();
-        graphics2D.drawImage(originalImage.getScaledInstance(32, 32, Image.SCALE_SMOOTH), 0, 0, null);
-        graphics2D.dispose();
+        } catch (IOException e) {
+            log.error("Error converting multipartFile to file", e);
+        }
 
-        // Конвертация BufferedImage в File
-        File outputFile = new File("resizedImage.png");
-        ImageIO.write(resizedImage, "png", outputFile);
-
-        return outputFile;
-//
-//        File convertedFile = new File(file.getOriginalFilename());
-//        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
-//            fos.write(file.getBytes());
-//
-//        } catch (IOException e) {
-//            log.error("Error converting multipartFile to file", e);
-//        }
-//
-//        return convertedFile;
+        return convertedFile;
     }
 
     @Override
-    public String classify(String text, MultipartFile[] files) throws IOException {
-        StringBuilder sb = new StringBuilder();
+    public Answer classify(String text, MultipartFile[] files) throws IOException {
         File textNetwork = getNetworkFile("text");
-        File imageNetwork = getNetworkFile("image");
-        sb.append(classifyText(text,textNetwork));
-        sb.append(System.lineSeparator());
+        File imageNetwork = getNetworkFile("img");
+        Map<Boolean,String> textAnswer = classifyText(text,textNetwork);
+        List<Map<Boolean,String>> imgsAnswer = new ArrayList<>();
         for (MultipartFile file : files) {
-            sb.append(file.getOriginalFilename())
-                    .append(":")
-                    .append(classifyImage(file,imageNetwork))
-                    .append(System.lineSeparator());
+            imgsAnswer.add(classifyImage(file,imageNetwork));
         }
 
-        return sb.toString();
+        return new Answer(textAnswer,imgsAnswer);
     }
 
 }

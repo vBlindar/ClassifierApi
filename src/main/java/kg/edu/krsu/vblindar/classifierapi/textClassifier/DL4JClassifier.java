@@ -148,20 +148,15 @@ public class DL4JClassifier {
 
 
     public TextCharacteristic classify(ClassifiableText classifiableText) {
-        // Преобразуем текст в вектор признаков
+
         double[] inputArray = getTextAsVectorOfWords(classifiableText);
-        // Преобразуем одномерный массив в двумерный, добавив дополнительное измерение
         INDArray input = Nd4j.create(new double[][]{inputArray});
         //INDArray input = Nd4j.create(getTextAsVectorOfWords(classifiableText));
 
         // Получаем вывод сети
         INDArray output = network.output(input);
-
         checkVector(output.data());
-        // Определяем индекс максимального значения в выходном векторе
         int index = output.argMax(1).getInt(0);
-
-        // Возвращаем соответствующее значение характеристики
         return getCharacteristicValueByIndex(index);
     }
 

@@ -1,6 +1,7 @@
 package kg.edu.krsu.vblindar.classifierapi.controller;
 
 
+import kg.edu.krsu.vblindar.classifierapi.entity.dto.Answer;
 import kg.edu.krsu.vblindar.classifierapi.imageClassify.ImageModel;
 import kg.edu.krsu.vblindar.classifierapi.imageClassify.dataset.ImageDataset;
 import kg.edu.krsu.vblindar.classifierapi.service.impl.ClassifyService;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Controller
@@ -32,8 +34,6 @@ public class ApiController {
     private final ImageCharacteristicService imageCharacteristicService;
 
 
-
-
     @PostMapping("/storage")
     ResponseEntity<Boolean> fillStorage(String path) throws IOException {
         File file = new File(path);
@@ -45,7 +45,7 @@ public class ApiController {
     }
 
     @PostMapping("/storage/image")
-    ResponseEntity<Boolean> fillImagesStorage(String filePath){
+    ResponseEntity<Boolean> fillImagesStorage(String filePath) {
         File file = new File(filePath);
         if (!file.exists()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found");
@@ -58,42 +58,47 @@ public class ApiController {
     @PostMapping("/training/text")
     CompletableFuture<ResponseEntity<String>> textTraining() throws IOException {
         trainTextService.startClassification();
-        return CompletableFuture.supplyAsync(()->ResponseEntity.ok("Text training completed successfully"));
+        return CompletableFuture.supplyAsync(() -> ResponseEntity.ok("Text training completed successfully"));
     }
 
+
     @PostMapping("/training/image")
-    CompletableFuture<ResponseEntity<String>>  imageTraining() throws IOException {
+    CompletableFuture<ResponseEntity<String>> imageTraining() throws IOException {
         int count = imageCharacteristicService.getCharacteristicsCount();
-        System.out.println("privet");
-        ImageDataset imageDataset = new ImageDataset(count);
-        ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
-                imageDataset.getTestDataSetIterator(), count);
-        imageModel.train();
-        imageModel.test();
-        imageModel.save();
-        return CompletableFuture.supplyAsync(()->ResponseEntity.ok("Image training completed successfully"));
+        CompletableFuture.runAsync(() -> {
+            ImageDataset imageDataset = new ImageDataset(count);
+            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
+                    imageDataset.getTestDataSetIterator(), count);
+            imageModel.train();
+            imageModel.test();
+            try {
+                imageModel.save();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return CompletableFuture.supplyAsync(() -> ResponseEntity.ok("Image training started successfully"));
     }
 
     @PostMapping("/classify/text")
-    ResponseEntity<String> classifyText(String text) throws IOException {
+    ResponseEntity<Map<Boolean,String>> classifyText(String text) throws IOException {
         File model = classifyService.getNetworkFile("text");
-        String response = classifyService.classifyText(text,model);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(classifyService.classifyText(text, model));
     }
 
     @PostMapping("/classify/image")
-    ResponseEntity<String> classifyImage(MultipartFile file) throws IOException{
+    ResponseEntity<Map<Boolean,String>> classifyImage(MultipartFile file) throws IOException {
         File model = classifyService.getNetworkFile("img");
-        return ResponseEntity.ok(classifyService.classifyImage(file,model));
+        return ResponseEntity.ok(classifyService.classifyImage(file, model));
     }
+
     @PostMapping("/classify")
-    ResponseEntity<String> classify(String text, MultipartFile[] files) throws IOException{
-        String response = classifyService.classify(text,files);
-        return ResponseEntity.ok(response);
+    ResponseEntity<Answer> classify(String text, MultipartFile[] files) throws IOException {
+
+        return ResponseEntity.ok(classifyService.classify(text, files));
 
 
     }
-
 
 
 }
