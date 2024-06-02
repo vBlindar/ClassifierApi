@@ -1,1 +1,5 @@
-in the root of the project you need to create a models folder, and in it create 2 more folders: imgClassifier, textClassifier
+создать папки
+-models
+    -imgClassifier
+    -textClassifier
+контроллеры обучения

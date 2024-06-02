@@ -151,9 +151,7 @@ public class DL4JClassifier {
 
         double[] inputArray = getTextAsVectorOfWords(classifiableText);
         INDArray input = Nd4j.create(new double[][]{inputArray});
-        //INDArray input = Nd4j.create(getTextAsVectorOfWords(classifiableText));
 
-        // Получаем вывод сети
         INDArray output = network.output(input);
         checkVector(output.data());
         int index = output.argMax(1).getInt(0);
