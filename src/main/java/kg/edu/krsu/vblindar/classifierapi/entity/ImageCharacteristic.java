@@ -22,4 +22,6 @@ public class ImageCharacteristic {
 
     private String value;
 
+    //private Boolean check;
+
 }

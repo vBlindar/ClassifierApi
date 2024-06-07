@@ -117,7 +117,7 @@ public class ImageModel {
         network = new MultiLayerNetwork(configuration);
         network.init();
         StatsStorage statsStorage = new FileStatsStorage(new File("statistics/images-stats.dl4j"));
-        network.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(50));
+        network.setListeners(new StatsListener(statsStorage), new ScoreIterationListener(200));
     }
 
     public void train() {
@@ -173,7 +173,7 @@ public class ImageModel {
         logStatsToFile(evaluationOnTrain.stats(),null,"RESULTS ON TRAINING DATA");
         Evaluation evaluationOnTest = network.evaluate(testSet);
         System.out.println(evaluationOnTest.stats());
-        logStatsToFile(evaluationOnTrain.stats(),null,"RESULTS ON TESTING DATA");
+        logStatsToFile(evaluationOnTest.stats(),null,"RESULTS ON TESTING DATA");
     }
 
     public void save() throws IOException {

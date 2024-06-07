@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,7 +23,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-@Controller
+@RestController
 @RequestMapping("/classifier")
 @RequiredArgsConstructor
 public class ApiController {
@@ -66,16 +67,23 @@ public class ApiController {
     CompletableFuture<ResponseEntity<String>> imageTraining() throws IOException {
         int count = imageCharacteristicService.getCharacteristicsCount();
         CompletableFuture.runAsync(() -> {
-            ImageDataset imageDataset = new ImageDataset(count);
-            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
-                    imageDataset.getTestDataSetIterator(), count);
-            imageModel.train();
-            imageModel.test();
+            ImageDataset imageDataset = new ImageDataset(11);
+//            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
+//                    imageDataset.getTestDataSetIterator(), count);
             try {
-                imageModel.save();
+                ImageModel i2 = new ImageModel(imageDataset.getTrainDataSetIterator(),
+                        imageDataset.getTestDataSetIterator(),classifyService.getNetworkFile("img"));
+                i2.test();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            //  imageModel.train();
+//                imageModel.test();
+//            try {
+//                imageModel.save();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
         });
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok("Image training started successfully"));
     }
@@ -102,3 +110,4 @@ public class ApiController {
 
 
 }
+

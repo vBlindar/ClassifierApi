@@ -141,7 +141,7 @@ public class ClassifyService implements IClassifyService {
             imgsAnswer.add(classifyImage(file,imageNetwork));
         }
 
-        return new Answer(textAnswer,imgsAnswer);
+        return new Answer(textAnswer,imgsAnswer,Answer.checkForFalse(textAnswer,imgsAnswer));
     }
 
 }

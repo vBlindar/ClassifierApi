@@ -24,5 +24,7 @@ public class TextCharacteristic {
   @OneToMany(mappedBy = "characteristic", cascade = CascadeType.ALL)
   private List<ClassifiableText> texts;
 
+  //private Boolean check;
+
 
 }
