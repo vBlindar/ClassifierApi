@@ -105,6 +105,26 @@ public class DL4JClassifier {
         System.out.println("Training complete");
     }
 
+    public void test(List<ClassifiableText> train, List<ClassifiableText> test){
+        INDArray inputTrain = getInput(train);
+        INDArray labelsTrain = getIdeal(train);
+        DataSet dataSetTrain = new DataSet(inputTrain, labelsTrain);
+
+        INDArray inputTest = getInput(test);
+        INDArray labelsTest = getIdeal(test);
+        DataSet dataSetTest = new DataSet(inputTest, labelsTest);
+
+        Evaluation evalTrain = new Evaluation();
+        INDArray outputTrain = network.output(dataSetTrain.getFeatures(), false);
+        evalTrain.eval(dataSetTrain.getLabels(), outputTrain);
+        System.out.println(evalTrain.stats());
+
+        Evaluation evalTest = new Evaluation();
+        INDArray output = network.output(dataSetTest.getFeatures(), false);
+        evalTest.eval(dataSetTest.getLabels(), output);
+        System.out.println(evalTest.stats());
+
+    }
 
 
 
@@ -141,7 +161,7 @@ public class DL4JClassifier {
 
 
     public void saveTrainedClassifier(File trainedNetwork) throws IOException {
-        ModelSerializer.writeModel(network, trainedNetwork, true); // сохранение модели
+        ModelSerializer.writeModel(network, trainedNetwork, true);
     }
 
 
@@ -164,7 +184,7 @@ public class DL4JClassifier {
                 return vw;
             }
         }
-        return null; // Возвращаем null, если слово не найдено
+        return null;
     }
     private TextCharacteristic getCharacteristicValueByIndex(int index) {
         for (TextCharacteristic value : allCharacteristic) {
@@ -189,7 +209,7 @@ public class DL4JClassifier {
 
     private void checkVector(DataBuffer vector) {
         for (long i = 0; i < vector.length(); i++) {
-            if(vector.getDouble(i) >= 0.33){
+            if(vector.getDouble(i) >= 0.15){
                return;
             }
         }

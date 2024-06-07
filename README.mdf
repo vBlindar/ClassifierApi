@@ -2,4 +2,6 @@
 -models
     -imgClassifier
     -textClassifier
-контроллеры обучения
+в resources добавить папку dataset
+                                -images
+                                -texts

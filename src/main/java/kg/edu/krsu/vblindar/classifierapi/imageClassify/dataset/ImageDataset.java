@@ -22,7 +22,7 @@ public class ImageDataset {
     private static final int IMAGE_CHANNELS = 3;
     private static int IMAGE_CLASSES;
     private static final int SEED = 666;
-    private static final String RESOURCE_DIR_NAME = "dataset";
+    private static final String RESOURCE_DIR_NAME = "dataset/images";
     private static final String[] ALLOWED_FORMATS = {"png","jpg"};
     private static final int TRAIN_SPLIT_PERCENTAGE = 80;
     private static final int TEST_SPLIT_PERCENTAGE = 20;

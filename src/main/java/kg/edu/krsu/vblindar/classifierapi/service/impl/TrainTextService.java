@@ -24,6 +24,7 @@ public class TrainTextService implements ITrainTextService {
     private final VocabularyService vocabularyService;
     private final ClassifiableTextService classifiableTextService;
     private final TextCharacteristicService characteristicValueService;
+    private final ClassifyService classifyService;
 
     @Override
     public void trainAndSaveTextClassifier(List<ClassifiableText> classifiableTextForTrain,
@@ -40,7 +41,6 @@ public class TrainTextService implements ITrainTextService {
 
         DL4JClassifier classifier = createTextClassifier();
 
-
         Map<String, List<ClassifiableText>> data = classifiableTextService.splitTextsForTrainingAndTesting();
         List<ClassifiableText> training = classifiableTextService.collectAndShuffleTexts(data, "training");
         List<ClassifiableText> testing = classifiableTextService.collectAndShuffleTexts(data, "testing");
@@ -48,6 +48,13 @@ public class TrainTextService implements ITrainTextService {
         trainAndSaveTextClassifier(training, classifier);
 
         checkTextClassifierAccuracy(testing, classifier);
+    }
+    public void test() throws IOException{
+        DL4JClassifier classifier = classifyService.createClassifiers(classifyService.getNetworkFile("text")).get(0);
+        Map<String, List<ClassifiableText>> data = classifiableTextService.splitTextsForTrainingAndTesting();
+        List<ClassifiableText> training = classifiableTextService.collectAndShuffleTexts(data, "training");
+        List<ClassifiableText> testing = classifiableTextService.collectAndShuffleTexts(data, "testing");
+        classifier.test(training,testing);
     }
 
     @Override

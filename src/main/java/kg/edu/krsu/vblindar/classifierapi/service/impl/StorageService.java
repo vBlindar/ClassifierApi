@@ -26,7 +26,8 @@ public class StorageService implements IStorageService {
         File[] dirs = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
         List<ClassifiableText> classifiableText = getClassifiableTexts(dirs[1]);
         saveTexts(classifiableText);
-        Arrays.stream(dirs).forEach(System.out::println);
+        fillImagesCharacteristic(dirs[0]);
+
     }
 
     @Override
@@ -105,7 +106,6 @@ public class StorageService implements IStorageService {
     public void fillImagesCharacteristic(File file) {
         File[] dirs = file.listFiles();
         for (File dir : dirs) {
-            System.out.println(dir.getName());
             if(dir.getName().contains(".DS_Store")){
                 dir.delete();
             }

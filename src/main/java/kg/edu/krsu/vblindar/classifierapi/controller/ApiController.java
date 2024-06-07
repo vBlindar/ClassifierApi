@@ -11,7 +11,6 @@ import kg.edu.krsu.vblindar.classifierapi.service.impl.TrainTextService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -45,20 +43,21 @@ public class ApiController {
         return ResponseEntity.ok(Boolean.TRUE);
     }
 
-    @PostMapping("/storage/image")
-    ResponseEntity<Boolean> fillImagesStorage(String filePath) {
-        File file = new File(filePath);
-        if (!file.exists()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found");
-        }
-        storageService.fillImagesCharacteristic(file);
-        return null;
-    }
+//    @PostMapping("/storage/image")
+//    ResponseEntity<Boolean> fillImagesStorage(String filePath) {
+//        File file = new File(filePath);
+//        if (!file.exists()) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found");
+//        }
+//        storageService.fillImagesCharacteristic(file);
+//        return null;
+//    }
 
 
     @PostMapping("/training/text")
     CompletableFuture<ResponseEntity<String>> textTraining() throws IOException {
-        trainTextService.startClassification();
+//        trainTextService.startClassification();
+        trainTextService.test();
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok("Text training completed successfully"));
     }
 
@@ -67,38 +66,38 @@ public class ApiController {
     CompletableFuture<ResponseEntity<String>> imageTraining() throws IOException {
         int count = imageCharacteristicService.getCharacteristicsCount();
         CompletableFuture.runAsync(() -> {
-            ImageDataset imageDataset = new ImageDataset(11);
-//            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
-//                    imageDataset.getTestDataSetIterator(), count);
-            try {
-                ImageModel i2 = new ImageModel(imageDataset.getTrainDataSetIterator(),
-                        imageDataset.getTestDataSetIterator(),classifyService.getNetworkFile("img"));
-                i2.test();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            //  imageModel.train();
-//                imageModel.test();
+            ImageDataset imageDataset = new ImageDataset(count);
+            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
+                    imageDataset.getTestDataSetIterator(), count);
 //            try {
-//                imageModel.save();
+//                ImageModel i2 = new ImageModel(imageDataset.getTrainDataSetIterator(),
+//                        imageDataset.getTestDataSetIterator(),classifyService.getNetworkFile("img"));
+//                i2.test();
 //            } catch (IOException e) {
 //                throw new RuntimeException(e);
 //            }
+            imageModel.train();
+            imageModel.test();
+            try {
+                imageModel.save();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok("Image training started successfully"));
     }
 
-    @PostMapping("/classify/text")
-    ResponseEntity<Map<Boolean,String>> classifyText(String text) throws IOException {
-        File model = classifyService.getNetworkFile("text");
-        return ResponseEntity.ok(classifyService.classifyText(text, model));
-    }
-
-    @PostMapping("/classify/image")
-    ResponseEntity<Map<Boolean,String>> classifyImage(MultipartFile file) throws IOException {
-        File model = classifyService.getNetworkFile("img");
-        return ResponseEntity.ok(classifyService.classifyImage(file, model));
-    }
+//    @PostMapping("/classify/text")
+//    ResponseEntity<Map<Boolean, String>> classifyText(String text) throws IOException {
+//        File model = classifyService.getNetworkFile("text");
+//        return ResponseEntity.ok(classifyService.classifyText(text, model));
+//    }
+//
+//    @PostMapping("/classify/image")
+//    ResponseEntity<Map<Boolean, String>> classifyImage(MultipartFile file) throws IOException {
+//        File model = classifyService.getNetworkFile("img");
+//        return ResponseEntity.ok(classifyService.classifyImage(file, model));
+//    }
 
     @PostMapping("/classify")
     ResponseEntity<Answer> classify(String text, MultipartFile[] files) throws IOException {
