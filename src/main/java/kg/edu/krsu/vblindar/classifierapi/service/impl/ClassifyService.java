@@ -2,6 +2,7 @@ package kg.edu.krsu.vblindar.classifierapi.service.impl;
 
 
 import kg.edu.krsu.vblindar.classifierapi.entity.*;
+import kg.edu.krsu.vblindar.classifierapi.entity.dto.Ad;
 import kg.edu.krsu.vblindar.classifierapi.entity.dto.Answer;
 import kg.edu.krsu.vblindar.classifierapi.repository.ImageCharacteristicRepository;
 import kg.edu.krsu.vblindar.classifierapi.service.IClassifyService;
@@ -42,18 +43,20 @@ public class ClassifyService implements IClassifyService {
         ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
         StringBuilder classifiedCharacteristics = new StringBuilder();
         List<DL4JClassifier> classifiers = createClassifiers(file);
+        boolean bool=true;
         try {
             for (DL4JClassifier classifier : classifiers) {
                 TextCharacteristic classifiedValue = classifier.classify(classifiableText);
 
                 classifiedCharacteristics.append(classifiedValue.getValue());
+                bool=classifiedValue.getCheck();
             }
         } catch (Exception e) {
             map.put(Boolean.FALSE, e.getMessage());
             return map;
 
         }
-        map.put(Boolean.TRUE,classifiedCharacteristics.toString());
+        map.put(Boolean.valueOf(bool),classifiedCharacteristics.toString());
         return map;
     }
 
@@ -116,6 +119,32 @@ public class ClassifyService implements IClassifyService {
         map.put(Boolean.FALSE,"This image does not belong to any topic from the training data");
         return map;
     }
+    public Map<Boolean, String> classifyImage(File file, File neural) throws IOException {
+        Map<Boolean,String> map = new HashMap<>();
+        List<ImageCharacteristic> characteristics = imageCharacteristicRepository.findAll();
+
+        MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork(neural);
+
+        NativeImageLoader loader = new NativeImageLoader(32, 32, 3);
+        INDArray image = loader.asMatrix(file);
+
+        ImagePreProcessingScaler scaler = new ImagePreProcessingScaler(0, 1);
+        scaler.transform(image);
+
+        INDArray output = model.output(image);
+
+        int classIdx = output.argMax(1).getInt(0) + 1;
+
+        for (ImageCharacteristic characteristic : characteristics) {
+            if (characteristic.getId() == classIdx){
+                map.put(characteristic.getCheck(),characteristic.getValue());
+                return map;
+            }
+        }
+
+        map.put(Boolean.FALSE,"This image does not belong to any topic from the training data");
+        return map;
+    }
 
     @Override
     public File convertMultipartFileToFile(MultipartFile file) throws IOException {
@@ -132,16 +161,30 @@ public class ClassifyService implements IClassifyService {
     }
 
     @Override
-    public Answer classify(String text, MultipartFile[] files) throws IOException {
+    public Answer classify(Ad ad) throws IOException {
         File textNetwork = getNetworkFile("text");
         File imageNetwork = getNetworkFile("img");
-        Map<Boolean,String> textAnswer = classifyText(text,textNetwork);
+        Map<Boolean,String> textAnswer = classifyText(ad.getText(),textNetwork);
         List<Map<Boolean,String>> imgsAnswer = new ArrayList<>();
-        for (MultipartFile file : files) {
+        for (String path : ad.getFiles()) {
+            var file = getFileFromPath(path);
             imgsAnswer.add(classifyImage(file,imageNetwork));
         }
 
-        return new Answer(textAnswer,imgsAnswer,Answer.checkForFalse(textAnswer,imgsAnswer));
+        return new Answer(ad.getId(),textAnswer,imgsAnswer,Answer.checkForFalse(textAnswer,imgsAnswer));
+    }
+    public  File getFileFromPath(String path) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("Path cannot be null or blank");
+        }
+
+        File file = new File(path);
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File does not exist at path: " + path);
+        }
+
+        return file;
     }
 
 }

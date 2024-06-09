@@ -11,7 +11,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class Answer {
-
+    private Long id;
     private Map<Boolean,String> text;
     private List<Map<Boolean,String>> images;
     private Boolean checked;

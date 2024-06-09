@@ -1,6 +1,7 @@
 package kg.edu.krsu.vblindar.classifierapi.service;
 
 
+import kg.edu.krsu.vblindar.classifierapi.entity.dto.Ad;
 import kg.edu.krsu.vblindar.classifierapi.entity.dto.Answer;
 import kg.edu.krsu.vblindar.classifierapi.textClassifier.DL4JClassifier;
 import org.springframework.stereotype.Component;
@@ -24,5 +25,5 @@ public interface IClassifyService {
 
     File convertMultipartFileToFile(MultipartFile file) throws IOException;
 
-    Answer classify(String text, MultipartFile[] files) throws IOException;
+    Answer classify(Ad ad) throws IOException;
 }
