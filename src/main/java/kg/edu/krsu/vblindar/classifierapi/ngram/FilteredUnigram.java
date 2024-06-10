@@ -16,7 +16,7 @@ public class FilteredUnigram {
         String[] words = clean(text).split("[ \n\t\r$+<>№=]");
 
         for (int i = 0; i < words.length; i++) {
-            words[i] = stemmer.doStem(words[i]);
+            words[i] = stemmer.stem(words[i]);
         }
 
         Set<String> uniqueValues = new LinkedHashSet<>(Arrays.asList(words));
