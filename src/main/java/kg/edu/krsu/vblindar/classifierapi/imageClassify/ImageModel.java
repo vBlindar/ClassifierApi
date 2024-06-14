@@ -73,6 +73,8 @@ public class ImageModel {
 
     private void initConfig() {
 
+
+
         configuration = new NeuralNetConfiguration.Builder()
                 .seed(NETWORK_SEED)
                 .updater(new Nesterovs(1e-2, 0.9))
@@ -127,13 +129,13 @@ public class ImageModel {
             Evaluation eval = new Evaluation();
             INDArray output = network.output(trainDataSet.getFeatures(), false);
             eval.eval(trainDataSet.getLabels(), output);
-            logStatsToFile(eval.stats(),null,"EPOCH: "+ i+1);
+            logStatsToFile(eval.stats(),"/Users/vlad_557/Desktop/инс/ClassifierApi/logs/img.txt","EPOCH: "+ (i+1));
             log.info("image model training - " + i + " epoch");
         }
     }
 
-    private static void logStatsToFile(String stats, String filePath,String epoch) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("/Users/vlad_557/Desktop/инс/ClassifierApi/logs/img.txt", true))) {
+    public static void logStatsToFile(String stats, String filePath,String epoch) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
             writer.write(epoch);
             writer.newLine();
             writer.write(stats);
@@ -170,10 +172,10 @@ public class ImageModel {
     public void test() {
         Evaluation evaluationOnTrain = network.evaluate(trainSet);
         System.out.println(evaluationOnTrain.stats());
-        logStatsToFile(evaluationOnTrain.stats(),null,"RESULTS ON TRAINING DATA");
+        logStatsToFile(evaluationOnTrain.stats(),"/Users/vlad_557/Desktop/инс/ClassifierApi/logs/img.txt","RESULTS ON TRAINING DATA");
         Evaluation evaluationOnTest = network.evaluate(testSet);
         System.out.println(evaluationOnTest.stats());
-        logStatsToFile(evaluationOnTest.stats(),null,"RESULTS ON TESTING DATA");
+        logStatsToFile(evaluationOnTest.stats(),"/Users/vlad_557/Desktop/инс/ClassifierApi/logs/img.txt","RESULTS ON TESTING DATA");
     }
 
     public void save() throws IOException {

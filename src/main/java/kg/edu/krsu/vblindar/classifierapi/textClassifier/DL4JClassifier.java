@@ -5,11 +5,13 @@ package kg.edu.krsu.vblindar.classifierapi.textClassifier;
 import kg.edu.krsu.vblindar.classifierapi.entity.TextCharacteristic;
 import kg.edu.krsu.vblindar.classifierapi.entity.ClassifiableText;
 import kg.edu.krsu.vblindar.classifierapi.entity.VocabularyWord;
+import kg.edu.krsu.vblindar.classifierapi.imageClassify.ImageModel;
 import kg.edu.krsu.vblindar.classifierapi.ngram.FilteredUnigram;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.DropoutLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
@@ -56,24 +58,47 @@ public class DL4JClassifier {
     }
 
     private MultiLayerNetwork createNeuralNetwork() {
+//        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+//                .weightInit(WeightInit.XAVIER)
+//                .updater(new Adam())
+//                .list()
+//                .layer(0, new DenseLayer.Builder()
+//                        .nIn(inputLayerSize)  // количество входов соответствует размеру входного слоя
+//                        .nOut(inputLayerSize / 6)
+//                        .activation(Activation.SIGMOID)
+//                        .build())
+//                .layer(1, new DenseLayer.Builder()
+//                        .nOut(inputLayerSize / 6 / 4)
+//                        .activation(Activation.SIGMOID)
+//                        .build())
+//                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
+//                        .nOut(outputLayerSize)
+//                        .activation(Activation.SIGMOID)
+//                        .build())
+//                .build();
+
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .weightInit(WeightInit.XAVIER)
                 .updater(new Adam())
                 .list()
                 .layer(0, new DenseLayer.Builder()
-                        .nIn(inputLayerSize)  // количество входов соответствует размеру входного слоя
+                        .nIn(inputLayerSize)
                         .nOut(inputLayerSize / 6)
                         .activation(Activation.SIGMOID)
                         .build())
-                .layer(1, new DenseLayer.Builder()
+                .layer(1, new DropoutLayer.Builder(0.5).build())
+                .layer(2, new DenseLayer.Builder()
                         .nOut(inputLayerSize / 6 / 4)
                         .activation(Activation.SIGMOID)
                         .build())
-                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
+                .layer(3, new DropoutLayer.Builder(0.5).build())
+                .layer(4, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
                         .nOut(outputLayerSize)
                         .activation(Activation.SIGMOID)
                         .build())
                 .build();
+
+
 
         MultiLayerNetwork network = new MultiLayerNetwork(conf);
         network.init();
@@ -98,6 +123,8 @@ public class DL4JClassifier {
             INDArray output = network.output(dataSet.getFeatures(), false);
             eval.eval(dataSet.getLabels(), output);
             System.out.println(eval.stats());
+            ImageModel.logStatsToFile(eval.stats(),"/Users/vlad_557/Desktop/инс/ClassifierApi/logs/text.txt",
+                    "EPOCH "+(epoch+1));
             epoch++;
         }
 
@@ -118,11 +145,14 @@ public class DL4JClassifier {
         INDArray outputTrain = network.output(dataSetTrain.getFeatures(), false);
         evalTrain.eval(dataSetTrain.getLabels(), outputTrain);
         System.out.println(evalTrain.stats());
-
+        ImageModel.logStatsToFile(evalTrain.stats(),"/Users/vlad_557/Desktop/инс/ClassifierApi/logs/text.txt",
+                "ON TRAIN DATA");
         Evaluation evalTest = new Evaluation();
         INDArray output = network.output(dataSetTest.getFeatures(), false);
         evalTest.eval(dataSetTest.getLabels(), output);
         System.out.println(evalTest.stats());
+        ImageModel.logStatsToFile(evalTest.stats(),"/Users/vlad_557/Desktop/инс/ClassifierApi/logs/text.txt",
+                "ON TEST DATA");
 
     }
 
@@ -159,12 +189,9 @@ public class DL4JClassifier {
     }
 
 
-
     public void saveTrainedClassifier(File trainedNetwork) throws IOException {
         ModelSerializer.writeModel(network, trainedNetwork, true);
     }
-
-
 
 
     public TextCharacteristic classify(ClassifiableText classifiableText) {

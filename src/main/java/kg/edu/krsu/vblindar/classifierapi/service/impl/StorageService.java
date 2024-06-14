@@ -24,10 +24,64 @@ public class StorageService implements IStorageService {
     @Override
     public void fillStorage(File file) {
         File[] dirs = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
+
+
+        if (dirs == null || dirs.length < 2) {
+            throw new IllegalArgumentException("Expected two directories: images and texts");
+        }
+
+        File imagesDir = dirs[0];
+        if (!imagesDir.isDirectory()) {
+            throw new IllegalArgumentException("Expected a directory for images");
+        }
+        checkImageFiles(imagesDir);
+
+        File textsDir = dirs[1];
+        if (!textsDir.isDirectory()) {
+            throw new IllegalArgumentException("Expected a directory for texts");
+        }
+        checkTextFiles(textsDir);
+
         List<ClassifiableText> classifiableText = getClassifiableTexts(dirs[1]);
         saveTexts(classifiableText);
         fillImagesCharacteristic(dirs[0]);
 
+    }
+
+    private void checkImageFiles(File imagesDir) {
+        File[] imageFiles = imagesDir.listFiles();
+        if (imageFiles == null) {
+            throw new IllegalArgumentException("Images directory is empty or cannot be read");
+        }
+
+        for (File imageFile : imageFiles) {
+            if (imageFile.isDirectory()) {
+                checkImageFiles(imageFile);
+            } else {
+                String fileName = imageFile.getName().toLowerCase();
+                if (!fileName.endsWith(".jpg") && !fileName.endsWith(".jpeg") && !fileName.endsWith(".png")) {
+                    throw new IllegalArgumentException("Invalid image file format: " + fileName);
+                }
+            }
+        }
+    }
+
+    private void checkTextFiles(File textsDir) {
+        File[] textFiles = textsDir.listFiles();
+        if (textFiles == null) {
+            throw new IllegalArgumentException("Texts directory is empty or cannot be read");
+        }
+
+        for (File textFile : textFiles) {
+            if (textFile.isDirectory()) {
+                checkTextFiles(textFile);
+            } else {
+                String fileName = textFile.getName().toLowerCase();
+                if (!fileName.endsWith(".txt")) {
+                    throw new IllegalArgumentException("Invalid text file format: " + fileName);
+                }
+            }
+        }
     }
 
     @Override
@@ -57,26 +111,32 @@ public class StorageService implements IStorageService {
     public List<ClassifiableText> parseFile(File file) throws IOException {
         List<ClassifiableText> classifiableTexts = new ArrayList<>();
         File[] characteristicsDir = file.listFiles(((dir, name) -> !name.equals(".DS_Store")));
-        List<TextCharacteristic> characteristicsEntity =
-                characteristicValueService.saveAllCharacteristic(characteristicsDir);
-        if (characteristicsDir != null && characteristicsDir.length == 0) {
+
+        if (characteristicsDir == null || characteristicsDir.length == 0) {
             throw new IOException("Directory with texts is empty!");
         }
+
+        List<TextCharacteristic> characteristicsEntity =
+                characteristicValueService.saveAllCharacteristic(characteristicsDir);
+
         for (File characteristic : characteristicsDir) {
             List<ClassifiableText> temp = new ArrayList<>();
             TextCharacteristic tc =
                     characteristicsEntity.stream()
                             .filter(c -> c.getValue().equals(characteristic.getName())).findFirst()
                             .orElse(null);
-            File[] texts =
-                    characteristic.listFiles((dir, name) ->
-                            FileNameUtils.getExtension(name.toLowerCase()).equals("txt"));
-            for (File text : texts) {
-                ClassifiableText ct = ClassifiableText.builder()
-                        .characteristic(tc)
-                        .text(readAllLine(text))
-                        .build();
-                temp.add(ct);
+
+            File[] texts = characteristic.listFiles((dir, name) ->
+                    FileNameUtils.getExtension(name.toLowerCase()).equals("txt"));
+
+            if (texts != null) {
+                for (File text : texts) {
+                    ClassifiableText ct = ClassifiableText.builder()
+                            .characteristic(tc)
+                            .text(readAllLine(text))
+                            .build();
+                    temp.add(ct);
+                }
             }
             classifiableTexts.addAll(temp);
         }

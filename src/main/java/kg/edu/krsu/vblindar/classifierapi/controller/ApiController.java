@@ -38,12 +38,13 @@ public class ApiController {
 
     @PostMapping("/dataset-upload")
     ResponseEntity<ApiResponse> fillStorage(
-            @ApiParam(value = "Dataset file", required = true) @RequestPart MultipartFile dataset) throws IOException {
+            @ApiParam(value = "Dataset file", required = true) @RequestPart MultipartFile dataset
+    ) throws IOException {
         File file = classifyService.convertMultipartFileToFile(dataset);
         if (!file.exists()) {
             throw new IOException("File not found");
         }
-//        storageService.fillStorage(file);
+     storageService.fillStorage(file);
         return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "dataset loaded successfully"));
     }
 
@@ -51,6 +52,7 @@ public class ApiController {
     @PostMapping("/training/text")
     CompletableFuture<ResponseEntity<ApiResponse>> textTraining() throws IOException {
         trainTextService.startClassification();
+        trainTextService.test();
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Text training " +
                 "completed " +
                 "successfully")));
@@ -60,18 +62,22 @@ public class ApiController {
     @PostMapping("/training/image")
     CompletableFuture<ResponseEntity<ApiResponse>> imageTraining() throws IOException {
         int count = imageCharacteristicService.getCharacteristicsCount();
-        CompletableFuture.runAsync(() -> {
-            ImageDataset imageDataset = new ImageDataset(count);
-            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
-                    imageDataset.getTestDataSetIterator(), count);
-            imageModel.train();
-            imageModel.test();
-            try {
-                imageModel.save();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        ImageDataset imageDataset = new ImageDataset(count);
+        ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),imageDataset.getTestDataSetIterator(),
+                classifyService.getNetworkFile("img"));
+        imageModel.test();
+//        CompletableFuture.runAsync(() -> {
+//            ImageDataset imageDataset = new ImageDataset(count);
+//            ImageModel imageModel = new ImageModel(imageDataset.getTrainDataSetIterator(),
+//                    imageDataset.getTestDataSetIterator(), count);
+//            imageModel.train();
+//            imageModel.test();
+//            try {
+//                imageModel.save();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Image training " +
                 "started " +
                 "successfully")));

@@ -46,8 +46,8 @@ public class TrainTextService implements ITrainTextService {
         List<ClassifiableText> testing = classifiableTextService.collectAndShuffleTexts(data, "testing");
 
         trainAndSaveTextClassifier(training, classifier);
-
-        checkTextClassifierAccuracy(testing, classifier);
+        classifier.test(training,testing);
+        //checkTextClassifierAccuracy(testing, classifier);
     }
     public void test() throws IOException{
         DL4JClassifier classifier = classifyService.createClassifiers(classifyService.getNetworkFile("text")).get(0);

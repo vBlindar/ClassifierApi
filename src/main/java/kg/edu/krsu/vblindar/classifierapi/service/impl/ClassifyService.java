@@ -43,7 +43,7 @@ public class ClassifyService implements IClassifyService {
         ClassifiableText classifiableText = ClassifiableText.builder().text(text).build();
         StringBuilder classifiedCharacteristics = new StringBuilder();
         List<DL4JClassifier> classifiers = createClassifiers(file);
-        boolean bool=true;
+        boolean bool=false;
         try {
             for (DL4JClassifier classifier : classifiers) {
                 TextCharacteristic classifiedValue = classifier.classify(classifiableText);

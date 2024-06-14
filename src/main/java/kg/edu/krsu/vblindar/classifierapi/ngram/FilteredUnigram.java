@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Component
@@ -20,6 +21,7 @@ public class FilteredUnigram {
         }
 
         Set<String> uniqueValues = new LinkedHashSet<>(Arrays.asList(words));
+        uniqueValues.removeIf(Objects::isNull);
         uniqueValues.removeIf(String::isEmpty);
 
         return uniqueValues;
